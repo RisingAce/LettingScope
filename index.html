@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Property Tools</title>
+  <style>
+    /* Basic reset & minimal styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    header, footer {
+      background-color: #4a76a8;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    main {
+      flex: 1;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .tools-list {
+      margin-top: 2rem;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .tools-list a {
+      display: block;
+      padding: 1rem 1.5rem;
+      background-color: #fff;
+      text-decoration: none;
+      color: #444;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: background-color 0.2s;
+      font-weight: bold;
+    }
+    .tools-list a:hover {
+      background-color: #eef;
+    }
+    footer p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>My Property Tools</h1>
+  </header>
+
+  <main>
+    <p>Welcome to my collection of property/real estate utilities! Select a tool below:</p>
+    <ul class="tools-list">
+      <li><a href="Inspectioniser.html">Inspectioniser</a></li>
+      <li><a href="RentalCalc.html">Rental Calculator</a></li>
+      <li><a href="Utilities.html">Utilities Tool</a></li>
+    </ul>
+  </main>
+
+  <footer>
+    <p>© 2025 Your Name or Company</p>
+  </footer>
+
+</body>
+</html>

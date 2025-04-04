@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InspectSpace • Property Inspection Tool</title>
+  
+  <!-- External dependencies -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.17/interact.min.js"></script>
+  <!-- Mammoth for docx parsing (CDN) -->
+  <script src="https://unpkg.com/mammoth@1.5.4/dist/mammoth.browser.min.js"></script>
+  <!-- QR Code generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    :root {
+      /* Light mode colors */
+      --bg-primary: #f0f0ea;
+      --bg-secondary: #e8e8dd;
+      --bg-window: #ffffff;
+      --text-primary: #232320;
+      --text-secondary: #46463e;
+      --accent-primary: #6d8a96;
+      --accent-secondary: #9bc995;
+      --accent-tertiary: #e7a75c;
+      --border-color: #2c2c2a;
+      --window-header: #7c90ac;
+      --window-shadow: rgba(0, 0, 0, 0.2);
+      --window-border: #242424;
+      --success: #66a182;
+      --error: #d35d6e; /* used throughout code */
+      --warning: #e7a75c;
+      
+      /* Size variables */
+      --window-radius: 6px;
+      --border-width: 2px;
+      --button-radius: 5px;
+      
+      /* Typography */
+      --font-heading: 'Arial Black', Gadget, sans-serif;
+      --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      
+      /* Transitions */
+      --transition-speed: 0.2s;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #212125;
+      --bg-secondary: #2c2c30;
+      --bg-window: #343438;
+      --text-primary: #e8e8e0;
+      --text-secondary: #b8b8b0;
+      --accent-primary: #7c9eb3;
+      --accent-secondary: #86b375;
+      --accent-tertiary: #e7b979;
+      --border-color: #5c5c5a;
+      --window-header: #546180;
+      --window-shadow: rgba(0, 0, 0, 0.4);
+      --window-border: #4a4a4a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: var(--font-body);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 16px;
+      line-height: 1.5;
+      overflow: hidden;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+    
+    /* Typography */
+    h1, h2, h3, h4, h5 {
+      font-family: var(--font-heading);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 900;
+    }
+    h1 {
+      font-size: 3.2rem;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      margin-bottom: 1rem;
+    }
+    
+    /* Buttons */
+    button, .btn {
+      font-family: var(--font-heading);
+      font-weight: bold;
+      font-size: 1rem;
+      text-transform: uppercase;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--accent-primary);
+      color: var(--bg-primary);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: var(--button-radius);
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      box-shadow: 4px 4px 0 var(--border-color);
+      margin: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    button:hover, .btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--border-color);
+      filter: brightness(1.1);
+    }
+    button:active, .btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: none;
+      filter: brightness(0.9);
+    }
+    .start-btn {
+      font-size: 1.2rem;
+      background-color: var(--accent-secondary);
+      padding: 1rem 2rem;
+      box-shadow: 5px 5px 0 var(--border-color);
+    }
+    .start-btn:hover {
+      transform: translate(2px,2px);
+      box-shadow: 3px 3px 0 var(--border-color);
+    }
+    .start-btn:active {
+      transform: translate(5px,5px);
+      box-shadow: none;
+    }
+    
+    /* Form groups */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-label {
+      display: block;
+      font-family: var(--font-heading);
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: var(--bg-window);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--text-primary);
+      transition: all var(--transition-speed);
+    }
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(109, 138, 150, 0.3);
+    }
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    /* Layout */
+    .app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .start-screen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      background-color: var(--bg-primary);
+      transition: opacity var(--transition-speed), transform var(--transition-speed);
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 10;
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
+    }
+    .start-screen.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .start-screen-content {
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+      background-color: var(--bg-window);
+      padding: 3rem;
+      border-radius: 10px;
+      border: var(--border-width) solid var(--border-color);
+      box-shadow: 8px 8px 0 var(--border-color);
+    }
+    .logo {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      transform: scale(1);
+      transition: transform 0.3s;
+    }
+    .logo:hover {
+      transform: scale(1.05);
+    }
+    .saved-reports {
+      margin-top: 3rem;
+      text-align: left;
+    }
+    .report-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      background-color: var(--bg-secondary);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .report-item {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+    .report-item:last-child {
+      border-bottom: none;
+    }
+    .report-item:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    .report-item-empty {
+      padding:1rem; text-align:center; color: var(--text-secondary);
+    }
+    .report-item-info {
+      flex:1;
+    }
+    .report-item-address {
+      font-weight:bold; margin-bottom:0.25rem;
+    }
+    .report-item-date {
+      font-size:0.8rem; color: var(--text-secondary);
+    }
+    .report-item-actions {
+      display:flex; gap:0.5rem;
+    }
+    .report-item-btn {
+      background:none;
+      border:1px solid var(--border-color);
+      border-radius:4px;
+      width:28px; height:28px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      transition: all var(--transition-speed);
+      padding:0;
+      box-shadow:2px 2px 0 var(--border-color);
+    }
+    .report-item-btn:hover {
+      transform:translate(1px,1px);
+      box-shadow:1px 1px 0 var(--border-color);
+    }
+    .report-item-btn.load-btn {
+      background-color: var(--accent-primary);
+      color:var(--bg-window);
+    }
+    .report-item-btn.delete-btn {
+      background-color:var(--error);
+      color:var(--bg-window);
+    }
+
+    .main-interface {
+      width:100%; height:100%;
+      opacity:0; transform:scale(0.95);
+      transition: opacity var(--transition-speed), transform var(--transition-speed);
+      position:absolute; top:0; left:0;
+      pointer-events:none;
+    }
+    .main-interface.active {
+      opacity:1; transform:scale(1);
+      pointer-events:auto;
+    }
+    .desktop {
+      width:100%; height:calc(100% - 40px);
+      position:relative; overflow:hidden;
+      /* Example placeholder for background image/pattern:
+         background-image: url("data:image/svg+xml,<svg>..."); */
+    }
+    .toolbar {
+      width:100%; height:40px; background-color:var(--window-header);
+      border-bottom: var(--border-width) solid var(--border-color);
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0 1rem; color: var(--bg-window);
+    }
+    .toolbar-title {
+      font-family: var(--font-heading);
+      font-weight:bold; text-transform:uppercase; letter-spacing:0.05em;
+    }
+    .toolbar-actions {
+      display:flex; gap:0.5rem;
+    }
+    .toolbar-btn {
+      background:none;
+      border:1px solid var(--border-color);
+      border-radius:4px; width:32px; height:32px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition: all var(--transition-speed);
+      padding:0;
+      box-shadow:2px 2px 0 var(--border-color);
+      color:var(--bg-window);
+    }
+    .toolbar-btn:hover {
+      transform:translate(1px,1px);
+      box-shadow:1px 1px 0 var(--border-color);
+      background-color:rgba(255,255,255,0.1);
+    }
+
+    .settings-panel {
+      position:absolute; top:40px; right:0; width:300px;
+      background-color: var(--bg-window);
+      border-left: var(--border-width) solid var(--border-color);
+      border-bottom: var(--border-width) solid var(--border-color);
+      border-bottom-left-radius:10px;
+      max-height:0; overflow:hidden; transition:max-height var(--transition-speed);
+      z-index:200; box-shadow:-4px 4px 0 var(--window-shadow);
+    }
+    .settings-panel.active {
+      max-height:600px;
+    }
+    .settings-header {
+      padding:1rem; border-bottom:1px solid var(--border-color);
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .settings-close {
+      background:none; border:none; cursor:pointer; font-size:1.2rem;
+      color:var(--text-secondary); transition: color var(--transition-speed);
+    }
+    .settings-close:hover {
+      color:var(--text-primary);
+    }
+    .settings-section {
+      padding:1rem; border-bottom:1px solid var(--border-color);
+    }
+    .settings-section:last-child {
+      border-bottom:none;
+    }
+    .settings-title {
+      margin-bottom:1rem;
+      font-family:var(--font-heading);
+      text-transform:uppercase; letter-spacing:0.05em;
+    }
+
+    /* Windows */
+    .window {
+      position:absolute;
+      background-color: var(--bg-window);
+      border: var(--border-width) solid var(--window-border);
+      border-radius: var(--window-radius);
+      box-shadow:6px 6px 0 var(--window-shadow);
+      min-width:300px; min-height:200px;
+      max-width:calc(100% - 20px);
+      max-height:calc(100% - 60px);
+      display:flex; flex-direction:column; overflow:hidden;
+      transition: transform 0.3s, opacity 0.3s;
+      user-select:none;
+    }
+    .window-header {
+      background-color:var(--window-header);
+      padding:0 1rem; height:35px;
+      display:flex; justify-content:space-between; align-items:center;
+      cursor:grab;
+      border-bottom: var(--border-width) solid var(--window-border);
+    }
+    .window-title {
+      color:var(--bg-window);
+      font-family: var(--font-heading); font-size:0.9rem; font-weight:bold;
+      text-transform:uppercase; letter-spacing:0.05em;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .window-controls {
+      display:flex; gap:8px;
+    }
+    .window-control {
+      width:15px; height:15px; border-radius:50%; cursor:pointer; position:relative;
+      border:1px solid var(--window-border);
+    }
+    .window-close { background-color:#ff5f56; }
+    .window-minimize { background-color:#ffbd2e; }
+    .window-maximize { background-color:#27c93f; }
+    .window-close:hover::after, .window-close:hover::before {
+      content:''; position:absolute; width:9px; height:1px; background-color:var(--window-border);
+      top:6px; left:2px;
+    }
+    .window-close:hover::after {
+      transform:rotate(45deg);
+    }
+    .window-close:hover::before {
+      transform:rotate(-45deg);
+    }
+    .window-minimize:hover::after {
+      content:'';
+      position:absolute; width:9px; height:1px; background-color:var(--window-border);
+      top:6px; left:2px;
+    }
+    .window-maximize:hover::after, .window-maximize:hover::before {
+      content:''; position:absolute; background-color:var(--window-border);
+    }
+    .window-maximize:hover::after {
+      width:7px; height:7px; border:1px solid var(--window-border);
+      top:2px; left:2px; background-color:transparent;
+    }
+    .window-content {
+      flex:1; padding:1.5rem; overflow-y:auto;
+    }
+    .window.active {
+      box-shadow:8px 8px 0 var(--window-shadow);
+    }
+    .window.minimized .window-content {
+      display:none;
+    }
+    .window.maximized {
+      width:100% !important;
+      height:calc(100% - 40px) !important;
+      top:0 !important; left:0 !important; border-radius:0;
+    }
+
+    /* Some animations & stuff */
+    .animate-pop {
+      animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop {
+      0% { transform:scale(0.9); opacity:0; }
+      100% { transform:scale(1); opacity:1; }
+    }
+    .animate-shake {
+      animation: shake 0.3s cubic-bezier(0.36,0.07,0.19,0.97);
+    }
+    @keyframes shake {
+      0%,100% { transform:translateX(0); }
+      25% { transform:translateX(-5px); }
+      50% { transform:translateX(5px); }
+      75% { transform:translateX(-5px); }
+    }
+
+    /* Font sizes */
+    .font-size-1 { font-size:14px; }
+    .font-size-2 { font-size:16px; }
+    .font-size-3 { font-size:18px; }
+
+    /* High Contrast */
+    .high-contrast {
+      --accent-primary:#0066cc;
+      --accent-secondary:#00994c;
+      --accent-tertiary:#cc6600;
+      --error:#cc0000;
+      --warning:#cc6600;
+      --success:#007744;
+      --text-primary:#000000;
+      --text-secondary:#333333;
+      --border-color:#000000;
+      --border-width:2px;
+    }
+
+    /* Minimal stub styles for .toggle, .toggle-switch, .drag-over, .canvas-tool */
+    .toggle {
+      display: inline-block;
+      position: relative;
+      padding-left: 50px;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      font-size: 0.9rem;
+    }
+    .toggle-switch {
+      position: absolute;
+      left: 0; top: 0;
+      width: 40px; height: 20px;
+      background: #ccc;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+    .toggle.active .toggle-switch {
+      background: var(--accent-primary);
+    }
+    .drag-over {
+      background-color: rgba(0, 0, 0, 0.1) !important;
+      border: 2px dashed var(--border-color) !important;
+    }
+    .canvas-tool {
+      background-color: var(--accent-primary);
+      color: var(--bg-window);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--border-color);
+    }
+    .canvas-tool:hover {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--border-color);
+    }
+
+    /* Responsive */
+    @media (max-width:768px) {
+      .start-screen-content {
+        padding:1.5rem;
+      }
+      h1 { font-size:2rem; }
+      .logo { font-size:2.5rem; }
+      .form-group { margin-bottom:1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Start Screen -->
+    <div id="start-screen" class="start-screen active"></div>
+    
+    <!-- Main Interface -->
+    <div id="main-interface" class="main-interface">
+      <div id="toolbar" class="toolbar"></div>
+      <div id="desktop" class="desktop"></div>
+      <div id="settings-panel" class="settings-panel"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ===== App State =====
+      const state = {
+        darkMode:false,
+        fontSize:2,
+        highContrast:false,
+        currentInspection:null,
+        savedInspections:[],
+        windows:[],
+        nextWindowId:1,
+        zIndex:100,
+
+        // Default room templates for drag-and-drop
+        defaultRoomTemplates: [
+          { name:"Kitchen", condition:5, notes:"", urgent:false },
+          { name:"Living Room", condition:5, notes:"", urgent:false },
+          { name:"Bedroom", condition:5, notes:"", urgent:false },
+          { name:"Bathroom", condition:5, notes:"", urgent:false },
+          { name:"Ensuite", condition:5, notes:"", urgent:false },
+          { name:"Hallway", condition:5, notes:"", urgent:false },
+          { name:"Garden", condition:5, notes:"", urgent:false },
+          { name:"Storage Cupboard", condition:5, notes:"", urgent:false }
+        ]
+      };
+
+      // ===== DOM elements =====
+      const elements = {
+        startScreen: document.getElementById('start-screen'),
+        mainInterface: document.getElementById('main-interface'),
+        desktop: document.getElementById('desktop'),
+        toolbar: document.getElementById('toolbar'),
+        settingsPanel: document.getElementById('settings-panel')
+      };
+
+      // ===== Init =====
+      function init() {
+        loadStateFromLocal();
+        renderStartScreen();
+        renderToolbar();
+        renderSettingsPanel();
+        setupEventListeners();
+      }
+
+      function loadStateFromLocal() {
+        try {
+          const s = localStorage.getItem('propInspectState');
+          if (s) {
+            const parsed = JSON.parse(s);
+            state.darkMode = parsed.darkMode||false;
+            state.fontSize = parsed.fontSize||2;
+            state.highContrast = parsed.highContrast||false;
+            state.savedInspections = parsed.savedInspections||[];
+          }
+          if (state.darkMode) document.body.setAttribute('data-theme','dark');
+          document.body.classList.add(`font-size-${state.fontSize}`);
+          if (state.highContrast) document.body.classList.add('high-contrast');
+        } catch(e){ console.error(e); }
+      }
+
+      function saveStateToLocal() {
+        try {
+          const toSave = {
+            darkMode:state.darkMode,
+            fontSize:state.fontSize,
+            highContrast:state.highContrast,
+            savedInspections:state.savedInspections
+          };
+          localStorage.setItem('propInspectState', JSON.stringify(toSave));
+        } catch(e){ console.error(e); }
+      }
+
+      // ===== Start Screen =====
+      function renderStartScreen() {
+        elements.startScreen.innerHTML = `
+          <div class="start-screen-content animate-pop">
+            <div class="logo">🏠 InspectSpace</div>
+            <h1>Property Inspection Tool</h1>
+            <p>Streamline your property inspections with our intuitive, user-friendly tool.</p>
+            
+            <div class="form-group" style="margin:2rem 0;">
+              <label class="form-label">Or drag and drop an inspection form file:</label>
+              <div id="form-dropzone" class="dropzone">
+                <i class="fas fa-file-import" style="font-size:2rem; margin-bottom:10px;"></i>
+                <p>Drag and drop your .docx or .txt form here</p>
+                <input type="file" id="form-file-input" style="display:none;" accept=".doc,.docx,.txt"/>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Paste multiple properties (one per line):</label>
+              <textarea id="multi-property-text" class="form-textarea" placeholder="Property #1&#10;Property #2&#10;..."></textarea>
+              <button id="create-multi-inspections-btn" class="start-btn">Create Inspections</button>
+            </div>
+
+            <button id="start-inspection-btn" class="start-btn" style="margin-top:1rem;">
+              <i class="fas fa-clipboard-check"></i> Begin New Inspection
+            </button>
+
+            <div class="saved-reports" style="margin-top:2rem;">
+              <h3>Saved Inspections</h3>
+              <ul class="report-list" id="saved-reports-list">
+                ${renderSavedReportsList()}
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderSavedReportsList(){
+        if (!state.savedInspections.length) {
+          return '<li class="report-item-empty">No saved inspections found.</li>';
+        }
+        return state.savedInspections.map(insp => `
+          <li class="report-item" data-id="${insp.id}">
+            <div class="report-item-info">
+              <div class="report-item-address">${insp.propertyAddress}</div>
+              <div class="report-item-date">${new Date(insp.date).toLocaleDateString()}</div>
+            </div>
+            <div class="report-item-actions">
+              <button class="report-item-btn load-btn" title="Load"><i class="fas fa-folder-open"></i></button>
+              <button class="report-item-btn delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+          </li>
+        `).join('');
+      }
+
+      // ===== Toolbar =====
+      function renderToolbar() {
+        elements.toolbar.innerHTML = `
+          <div class="toolbar-title">InspectSpace</div>
+          <div class="toolbar-actions">
+            <button id="new-inspection-btn" class="toolbar-btn" title="New Inspection"><i class="fas fa-plus"></i></button>
+            <button id="save-inspection-btn" class="toolbar-btn" title="Save Inspection"><i class="fas fa-save"></i></button>
+            <button id="export-pdf-btn" class="toolbar-btn" title="Export PDF"><i class="fas fa-file-pdf"></i></button>
+            <button id="settings-btn" class="toolbar-btn" title="Settings"><i class="fas fa-cog"></i></button>
+            <button id="home-btn" class="toolbar-btn" title="Return to Home"><i class="fas fa-home"></i></button>
+          </div>
+        `;
+      }
+
+      // ===== Settings =====
+      function renderSettingsPanel() {
+        elements.settingsPanel.innerHTML = `
+          <div class="settings-header">
+            <h3>Settings</h3>
+            <button id="settings-close-btn" class="settings-close"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="settings-section">
+            <h4 class="settings-title">Appearance</h4>
+            <div class="form-group">
+              <label class="toggle ${state.darkMode?'active':''}" id="dark-mode-toggle">
+                <span class="toggle-switch"></span>
+                Dark Mode
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="toggle ${state.highContrast?'active':''}" id="high-contrast-toggle">
+                <span class="toggle-switch"></span>
+                High Contrast
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <div class="font-size-controls">
+                <button id="font-size-decrease" class="canvas-tool">A-</button>
+                <button id="font-size-reset" class="canvas-tool">Reset</button>
+                <button id="font-size-increase" class="canvas-tool">A+</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h4 class="settings-title">About</h4>
+            <p>InspectSpace v1.0</p>
+            <p>A property inspection tool for letting agents.</p>
+            <p>© 2025 InspectSpace</p>
+          </div>
+        `;
+      }
+
+      // ===== Setup Listeners =====
+      function setupEventListeners(){
+        // "Begin New Inspection"
+        document.getElementById('start-inspection-btn').addEventListener('click', ()=>{
+          startNewInspection(false); // always open property details
+        });
+
+        // "Create multiple inspections" from lines
+        document.getElementById('create-multi-inspections-btn').addEventListener('click', () => {
+          const txt = (document.getElementById('multi-property-text').value||"").trim();
+          if(!txt) return;
+          const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+          let count=0;
+          lines.forEach(line=>{
+            const newInsp = {
+              id: generateId(),
+              date: new Date().toISOString(),
+              propertyAddress: line,
+              agentName:"",
+              tenantName:"",
+              rooms:[],
+              tenantSignature:"",
+              agentSignature:""
+            };
+            state.savedInspections.push(newInsp);
+            count++;
+          });
+          saveStateToLocal();
+          document.getElementById('saved-reports-list').innerHTML = renderSavedReportsList();
+          alert(`Created ${count} new inspections!`);
+        });
+
+        // Saved inspections
+        const srList = document.getElementById('saved-reports-list');
+        srList.addEventListener('click', (e) => {
+          const targ = e.target;
+          if(!targ) return;
+          const item = targ.closest('.report-item');
+          if(!item) return;
+          const rid = item.dataset.id;
+          if(targ.classList.contains('load-btn') || targ.parentElement.classList.contains('load-btn')){
+            e.stopPropagation();
+            loadInspection(rid);
+          } else if(targ.classList.contains('delete-btn') || targ.parentElement.classList.contains('delete-btn')){
+            e.stopPropagation();
+            deleteInspection(rid);
+          } else {
+            // clicked item
+            loadInspection(rid);
+          }
+        });
+
+        // docx/txt drop
+        const dz = document.getElementById('form-dropzone');
+        const fi = document.getElementById('form-file-input');
+        dz.addEventListener('click', () => fi.click());
+        dz.addEventListener('dragover', (e)=>{
+          e.preventDefault(); dz.classList.add('drag-over');
+        });
+        dz.addEventListener('dragleave', ()=> dz.classList.remove('drag-over'));
+        dz.addEventListener('drop', (e)=>{
+          e.preventDefault();
+          dz.classList.remove('drag-over');
+          if(e.dataTransfer.files.length){
+            handleDocxFile(e.dataTransfer.files[0]);
+          }
+        });
+        fi.addEventListener('change', ()=>{
+          if(fi.files.length){
+            handleDocxFile(fi.files[0]);
+          }
+        });
+
+        // Toolbar
+        document.getElementById('new-inspection-btn').addEventListener('click', ()=>{
+          startNewInspection(false);
+        });
+        document.getElementById('save-inspection-btn').addEventListener('click', saveCurrentInspection);
+        document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+        document.getElementById('settings-btn').addEventListener('click', toggleSettingsPanel);
+        document.getElementById('home-btn').addEventListener('click', returnToHome);
+
+        // Settings
+        document.getElementById('settings-close-btn').addEventListener('click', toggleSettingsPanel);
+        document.getElementById('dark-mode-toggle').addEventListener('click', toggleDarkMode);
+        document.getElementById('high-contrast-toggle').addEventListener('click', toggleHighContrast);
+        document.getElementById('font-size-decrease').addEventListener('click', decreaseFontSize);
+        document.getElementById('font-size-reset').addEventListener('click', resetFontSize);
+        document.getElementById('font-size-increase').addEventListener('click', increaseFontSize);
+
+        // Draggable windows
+        interact('.window').draggable({
+          allowFrom:'.window-header',
+          listeners:{
+            move: dragMoveListener,
+            start: dragStartListener
+          }
+        });
+      }
+
+      // ========== docx parse ==========
+      async function handleDocxFile(file){
+        if(!file) return;
+        let text="";
+        try {
+          const fn = file.name.toLowerCase();
+          if(fn.endsWith('.docx')||fn.endsWith('.doc')){
+            const ab = await file.arrayBuffer();
+            const result = await window.mammoth.extractRawText({arrayBuffer:ab});
+            text = result.value;
+          } else if(fn.endsWith('.txt')){
+            text = await file.text();
+          } else {
+            alert("Unsupported file type, use .docx or .txt");
+            return;
+          }
+        } catch(e){
+          console.warn("Doc parse error, fallback to text read:", e);
+          text = await file.text();
+        }
+        autopopulateInspectionFromText(text);
+      }
+
+      function autopopulateInspectionFromText(text){
+        startNewInspection(true); // create new but skip property details until we parse
+        const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+        lines.forEach(line=>{
+          // naive parse
+          let lower = line.toLowerCase();
+          if(lower.startsWith("property:")){
+            state.currentInspection.propertyAddress = line.split(':')[1].trim();
+          }
+          if(lower.startsWith("tenants:")){
+            state.currentInspection.tenantName = line.split(':')[1].trim();
+          }
+          if(lower.includes("start date")){
+            // e.g. "Tenancy Start Date: 2024-10-01"
+            let splitted = line.split(':');
+            if(splitted.length>1){
+              state.currentInspection.date = splitted[1].trim();
+            }
+          }
+        });
+        alert("Form file parsed! Data autopopulated. Please confirm details next.");
+        elements.startScreen.classList.remove('active');
+        elements.mainInterface.classList.add('active');
+
+        // open property details so user can confirm
+        createPropertyDetailsWindow();
+      }
+
+      // ========== INSPECTIONS ==========
+      function startNewInspection(skipProperty){
+        state.currentInspection = {
+          id:generateId(),
+          date:new Date().toISOString(),
+          propertyAddress:"",
+          agentName:"",
+          tenantName:"",
+          rooms:[],
+          tenantSignature:"",
+          agentSignature:""
+        };
+        elements.startScreen.classList.remove('active');
+        elements.mainInterface.classList.add('active');
+        if(!skipProperty){
+          createPropertyDetailsWindow();
+        }
+      }
+
+      function createPropertyDetailsWindow(){
+        const wId = `window-property-${state.nextWindowId++}`;
+        const wHtml = `
+          <div id="${wId}" class="window" style="top:50px; left:50px; width:500px;">
+            <div class="window-header">
+              <div class="window-title">Property Details</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+                <div class="window-control window-minimize" data-window="${wId}"></div>
+                <div class="window-control window-maximize" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <form id="property-form">
+                <div class="form-group">
+                  <label class="form-label">Property Address</label>
+                  <input type="text" id="prop-address" class="form-input" required value="${state.currentInspection.propertyAddress}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Inspection Date</label>
+                  <input type="date" id="prop-date" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Agent Name</label>
+                  <input type="text" id="agent-name" class="form-input" required value="${state.currentInspection.agentName}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tenant Name</label>
+                  <input type="text" id="tenant-name" class="form-input" required value="${state.currentInspection.tenantName}">
+                </div>
+                <button type="submit" class="start-btn">Continue to Inspection</button>
+              </form>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+
+        const wEl = document.getElementById(wId);
+        wEl.querySelector('.window-close').addEventListener('click',()=> closeWindow(wId));
+        wEl.querySelector('.window-minimize').addEventListener('click',()=> minimizeWindow(wId));
+        wEl.querySelector('.window-maximize').addEventListener('click',()=> maximizeWindow(wId));
+
+        const dateInput = wEl.querySelector('#prop-date');
+        let d = new Date(state.currentInspection.date);
+        if(!isNaN(d.getTime())){
+          dateInput.value = d.toISOString().split('T')[0];
+        } else {
+          dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        wEl.querySelector('#property-form').addEventListener('submit',(e)=>{
+          e.preventDefault();
+          const address = wEl.querySelector('#prop-address').value.trim();
+          const dt = wEl.querySelector('#prop-date').value;
+          const aname = wEl.querySelector('#agent-name').value.trim();
+          const tname = wEl.querySelector('#tenant-name').value.trim();
+          state.currentInspection.propertyAddress = address;
+          state.currentInspection.date = dt;
+          state.currentInspection.agentName = aname;
+          state.currentInspection.tenantName = tname;
+          closeWindow(wId);
+          createRoomsManagementWindow();
+        });
+
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+        wEl.classList.add('animate-pop');
+      }
+
+      function createRoomsManagementWindow(){
+        const wId = `window-rooms-${state.nextWindowId++}`;
+        const wHtml = `
+          <div id="${wId}" class="window" style="top:80px; left:80px; width:700px;">
+            <div class="window-header">
+              <div class="window-title">Rooms Management</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+                <div class="window-control window-minimize" data-window="${wId}"></div>
+                <div class="window-control window-maximize" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <h3>Property: ${state.currentInspection.propertyAddress}</h3>
+              <p>Drag a template from the right or manually add new rooms. Click a room to open its inspection window.</p>
+              
+              <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <ul id="room-list" class="room-list" style="flex:1;">
+                  ${renderRoomsList()}
+                </ul>
+                <div class="template-palette" id="template-palette" style="width:200px; min-width:200px;">
+                  <h4 style="margin-bottom:0.5rem;">Room Templates</h4>
+                  ${state.defaultRoomTemplates.map((tpl,idx)=>`
+                    <div class="template-item" data-tid="${idx}" draggable="true">
+                      ${tpl.name}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:1rem;">
+                <label class="form-label" for="new-room-name">Add New Room</label>
+                <div style="display:flex; gap:10px;">
+                  <input type="text" id="new-room-name" class="form-input" placeholder="e.g. Kitchen, Bedroom 1">
+                  <button id="add-room-btn" class="start-btn"><i class="fas fa-plus"></i> Add</button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:20px;">
+                <button id="signatures-btn" class="start-btn">Proceed to Signatures</button>
+              </div>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+
+        const wEl = document.getElementById(wId);
+        wEl.querySelector('.window-close').addEventListener('click',()=> closeWindow(wId));
+        wEl.querySelector('.window-minimize').addEventListener('click',()=> minimizeWindow(wId));
+        wEl.querySelector('.window-maximize').addEventListener('click',()=> maximizeWindow(wId));
+
+        // Add new room
+        wEl.querySelector('#add-room-btn').addEventListener('click', addNewRoom);
+        // Signatures
+        wEl.querySelector('#signatures-btn').addEventListener('click', createSignaturesWindow);
+
+        // Drag & Drop templates
+        setupTemplateDragAndDrop(wEl);
+
+        // Room item clicks
+        const rl = wEl.querySelector('#room-list');
+        rl.addEventListener('click',(e)=>{
+          const tg = e.target;
+          if(!tg) return;
+          const item = tg.closest('.room-item');
+          if(!item) return;
+          const rid = item.dataset.id;
+          
+          if(tg.classList.contains('edit-btn')||tg.parentElement.classList.contains('edit-btn')){
+            e.stopPropagation();
+            createRoomInspectionWindow(rid);
+          } else if(tg.classList.contains('delete-btn')||tg.parentElement.classList.contains('delete-btn')){
+            e.stopPropagation();
+            deleteRoom(rid);
+          } else {
+            // clicked the entire item
+            createRoomInspectionWindow(rid);
+          }
+        });
+
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+        wEl.classList.add('animate-pop');
+      }
+
+      function renderRoomsList(){
+        if(!state.currentInspection.rooms.length){
+          return `<li class="room-item-empty">No rooms added yet.</li>`;
+        }
+        return state.currentInspection.rooms.map(r=>`
+          <li class="room-item ${r.urgent?'urgent':''}" data-id="${r.id}">
+            <div class="room-name">${r.name}</div>
+            <div class="room-actions">
+              <button class="room-btn edit-btn" title="Edit"><i class="fas fa-edit"></i></button>
+              <button class="room-btn delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+          </li>
+        `).join('');
+      }
+
+      function addNewRoom(){
+        const inp = document.getElementById('new-room-name');
+        const val = (inp.value||"").trim();
+        if(!val){
+          inp.classList.add('animate-shake');
+          setTimeout(()=> inp.classList.remove('animate-shake'),300);
+          return;
+        }
+        const newRoom = {
+          id: generateId(),
+          name: val,
+          condition:5,
+          notes:"",
+          photos:[],
+          urgent:false
+        };
+        state.currentInspection.rooms.push(newRoom);
+        document.getElementById('room-list').innerHTML= renderRoomsList();
+        inp.value="";
+        // optionally open the new room
+        createRoomInspectionWindow(newRoom.id);
+      }
+
+      function setupTemplateDragAndDrop(containerEl){
+        const palette = containerEl.querySelector('#template-palette');
+        const roomList = containerEl.querySelector('#room-list');
+
+        // Make each .template-item draggable
+        palette.querySelectorAll('.template-item').forEach(item=>{
+          item.addEventListener('dragstart',(e)=>{
+            e.dataTransfer.setData('text/templateId', item.dataset.tid);
+          });
+        });
+
+        roomList.addEventListener('dragover',(e)=>{
+          e.preventDefault();
+          roomList.classList.add('drag-over');
+        });
+        roomList.addEventListener('dragleave',()=>{
+          roomList.classList.remove('drag-over');
+        });
+        roomList.addEventListener('drop',(e)=>{
+          e.preventDefault();
+          roomList.classList.remove('drag-over');
+          const tid = e.dataTransfer.getData('text/templateId');
+          if(tid){
+            const tpl = state.defaultRoomTemplates[parseInt(tid,10)];
+            if(tpl){
+              const newRoom = {
+                id:generateId(),
+                name:tpl.name,
+                condition:tpl.condition,
+                notes:tpl.notes,
+                urgent:tpl.urgent,
+                photos:[]
+              };
+              state.currentInspection.rooms.push(newRoom);
+              roomList.innerHTML = renderRoomsList();
+            }
+          }
+        });
+      }
+
+      function deleteRoom(rid){
+        const idx = state.currentInspection.rooms.findIndex(r=>r.id===rid);
+        if(idx!==-1){
+          state.currentInspection.rooms.splice(idx,1);
+          const rl = document.getElementById('room-list');
+          if(rl) rl.innerHTML = renderRoomsList();
+        }
+      }
+
+      function createRoomInspectionWindow(rid){
+        const room = state.currentInspection.rooms.find(r=>r.id===rid);
+        if(!room) return;
+        const wId = `window-room-${rid}-${state.nextWindowId++}`;
+        const wHtml = `
+          <div id="${wId}" class="window" style="top:100px; left:200px; width:650px;">
+            <div class="window-header">
+              <div class="window-title">Room Inspection: ${room.name}</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+                <div class="window-control window-minimize" data-window="${wId}"></div>
+                <div class="window-control window-maximize" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <div class="form-group">
+                <label class="form-label">Condition Rating (1-10)</label>
+                <div style="display:flex; align-items:center; gap:1rem;">
+                  <input type="range" id="condition-slider-${rid}" min="1" max="10" value="${room.condition}" style="flex:1;">
+                  <div id="condition-value-${rid}" style="font-weight:bold; min-width:40px;">${room.condition}/10</div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea id="room-notes-${rid}" class="form-textarea">${room.notes}</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Photos</label>
+                <div class="dropzone" id="photo-dropzone-${rid}">
+                  <i class="fas fa-cloud-upload-alt" style="font-size:2rem; margin-bottom:10px;"></i>
+                  <p>Drag and drop photos here or click to select files</p>
+                  <input type="file" id="photo-file-${rid}" style="display:none;" accept="image/*" multiple>
+                </div>
+                <div id="photo-previews-${rid}" style="margin-top:1rem;">
+                  ${renderPhotoPreviews(room.photos,rid)}
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="toggle ${room.urgent?'active':''}" id="urgent-toggle-${rid}">
+                  <span class="toggle-switch"></span>
+                  Mark as Urgent Issue
+                </label>
+              </div>
+
+              <button id="save-room-btn-${rid}" class="start-btn">Save Room Inspection</button>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+
+        const wEl = document.getElementById(wId);
+        wEl.querySelector('.window-close').addEventListener('click', ()=> closeWindow(wId));
+        wEl.querySelector('.window-minimize').addEventListener('click', ()=> minimizeWindow(wId));
+        wEl.querySelector('.window-maximize').addEventListener('click', ()=> maximizeWindow(wId));
+        
+        // condition slider
+        const slider = wEl.querySelector(`#condition-slider-${rid}`);
+        const valEl = wEl.querySelector(`#condition-value-${rid}`);
+        slider.addEventListener('input',()=>{
+          valEl.textContent = `${slider.value}/10`;
+        });
+        // urgent
+        const urgT = wEl.querySelector(`#urgent-toggle-${rid}`);
+        urgT.addEventListener('click',()=>{
+          urgT.classList.toggle('active');
+        });
+
+        // photos
+        const dz = wEl.querySelector(`#photo-dropzone-${rid}`);
+        const fi = wEl.querySelector(`#photo-file-${rid}`);
+        dz.addEventListener('click', ()=>fi.click());
+        dz.addEventListener('dragover',(e)=>{
+          e.preventDefault();
+          dz.classList.add('active');
+        });
+        dz.addEventListener('dragleave',()=> dz.classList.remove('active'));
+        dz.addEventListener('drop',(e)=>{
+          e.preventDefault();
+          dz.classList.remove('active');
+          if(e.dataTransfer.files.length){
+            handleRoomPhotos(e.dataTransfer.files,room);
+          }
+        });
+        fi.addEventListener('change',()=>{
+          if(fi.files.length) handleRoomPhotos(fi.files,room);
+        });
+
+        // save
+        wEl.querySelector(`#save-room-btn-${rid}`).addEventListener('click',()=>{
+          room.condition = parseInt(slider.value);
+          room.notes = wEl.querySelector(`#room-notes-${rid}`).value;
+          room.urgent = urgT.classList.contains('active');
+          const rl = document.getElementById('room-list');
+          if(rl) rl.innerHTML=renderRoomsList();
+          closeWindow(wId);
+        });
+
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+        wEl.classList.add('animate-pop');
+      }
+
+      function handleRoomPhotos(files, room){
+        Array.from(files).forEach(file=>{
+          if(!file.type.match('image.*')) return;
+          const rdr = new FileReader();
+          rdr.onload=(ev)=>{
+            const pid= generateId();
+            room.photos.push({
+              id:pid, data:ev.target.result, name:file.name
+            });
+            const pEl = document.getElementById(`photo-previews-${room.id}`);
+            if(pEl){
+              pEl.innerHTML=renderPhotoPreviews(room.photos,room.id);
+              // re-bind delete photo
+              pEl.querySelectorAll('.photo-delete-btn').forEach(btn=>{
+                btn.addEventListener('click',(e)=>{
+                  const i = e.currentTarget.dataset.id;
+                  deletePhoto(room,i);
+                });
+              });
+            }
+          };
+          rdr.readAsDataURL(file);
+        });
+      }
+
+      function renderPhotoPreviews(photos, rid){
+        if(!photos.length){
+          return `<p>No photos yet.</p>`;
+        }
+        return `
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:1rem;">
+            ${photos.map(photo=>`
+              <div style="position:relative; border:2px solid var(--border-color); border-radius:5px; overflow:hidden; aspect-ratio:1;">
+                <img src="${photo.data}" alt="${photo.name}" style="width:100%; height:100%; object-fit:cover;">
+                <button class="photo-delete-btn" data-id="${photo.id}" style="
+                  position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
+                  background-color:rgba(0,0,0,0.5); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
+                  cursor:pointer; transition:all 0.2s; padding:0;
+                "><i class="fas fa-times"></i></button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      function deletePhoto(room, pid){
+        const idx = room.photos.findIndex(p=>p.id===pid);
+        if(idx!==-1){
+          room.photos.splice(idx,1);
+          const pEl = document.getElementById(`photo-previews-${room.id}`);
+          if(pEl){
+            pEl.innerHTML= renderPhotoPreviews(room.photos, room.id);
+            pEl.querySelectorAll('.photo-delete-btn').forEach(btn=>{
+              btn.addEventListener('click',(e)=>{
+                const i = e.currentTarget.dataset.id;
+                deletePhoto(room,i);
+              });
+            });
+          }
+        }
+      }
+
+      // =========== Signatures ===========
+      function createSignaturesWindow(){
+        const wId = `window-signatures-${state.nextWindowId++}`;
+        const wHtml=`
+          <div id="${wId}" class="window" style="top:120px; left:150px; width:700px;">
+            <div class="window-header">
+              <div class="window-title">Signatures</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+                <div class="window-control window-minimize" data-window="${wId}"></div>
+                <div class="window-control window-maximize" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <h3>Property: ${state.currentInspection.propertyAddress}</h3>
+              <p>Please sign below to confirm the inspection details.</p>
+
+              <div class="form-group">
+                <label class="form-label">Tenant Signature</label>
+                <canvas id="tenant-signature" width="600" height="150" style="border:1px solid var(--border-color); border-radius:5px; background:#fff; cursor:crosshair;"></canvas>
+                <div style="display:flex; gap:0.5rem; margin-top:0.5rem; justify-content:flex-end;">
+                  <button id="tenant-clear-btn" class="canvas-tool">Clear</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Agent Signature</label>
+                <canvas id="agent-signature" width="600" height="150" style="border:1px solid var(--border-color); border-radius:5px; background:#fff; cursor:crosshair;"></canvas>
+                <div style="display:flex; gap:0.5rem; margin-top:0.5rem; justify-content:flex-end;">
+                  <button id="agent-clear-btn" class="canvas-tool">Clear</button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:1rem;">
+                <button id="complete-inspection-btn" class="start-btn">Complete Inspection</button>
+                <button id="skip-signatures-btn" class="start-btn" style="background:#ccc; color:#333;">Skip Signatures</button>
+              </div>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+
+        const wEl = document.getElementById(wId);
+        wEl.querySelector('.window-close').addEventListener('click',()=> closeWindow(wId));
+        wEl.querySelector('.window-minimize').addEventListener('click',()=> minimizeWindow(wId));
+        wEl.querySelector('.window-maximize').addEventListener('click',()=> maximizeWindow(wId));
+
+        setupSignatureCanvas('tenant-signature','tenant-clear-btn');
+        setupSignatureCanvas('agent-signature','agent-clear-btn');
+
+        wEl.querySelector('#complete-inspection-btn').addEventListener('click',completeInspection);
+        wEl.querySelector('#skip-signatures-btn').addEventListener('click',()=>{
+          closeWindow(wId);
+          createSummaryWindow();
+        });
+
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+        wEl.classList.add('animate-pop');
+      }
+
+      function setupSignatureCanvas(canvasId, clearBtnId){
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext('2d');
+        let drawing=false; let lastX=0; let lastY=0;
+
+        ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth=2; ctx.strokeStyle='#000';
+
+        c.addEventListener('mousedown', startDraw);
+        c.addEventListener('mousemove', draw);
+        c.addEventListener('mouseup', stopDraw);
+        c.addEventListener('mouseout', stopDraw);
+
+        c.addEventListener('touchstart', startTouch, {passive:false});
+        c.addEventListener('touchmove', moveTouch, {passive:false});
+        c.addEventListener('touchend', stopDraw);
+
+        document.getElementById(clearBtnId).addEventListener('click', ()=>{
+          ctx.clearRect(0,0,c.width,c.height);
+        });
+
+        function startDraw(e){
+          drawing=true;
+          [lastX,lastY] = [e.offsetX, e.offsetY];
+        }
+        function draw(e){
+          if(!drawing) return;
+          ctx.beginPath();
+          ctx.moveTo(lastX,lastY);
+          ctx.lineTo(e.offsetX,e.offsetY);
+          ctx.stroke();
+          [lastX,lastY]=[e.offsetX,e.offsetY];
+        }
+        function stopDraw(){ drawing=false; }
+        function startTouch(e){
+          e.preventDefault();
+          drawing=true;
+          const rect = c.getBoundingClientRect();
+          const t = e.touches[0];
+          [lastX,lastY] = [t.clientX-rect.left, t.clientY-rect.top];
+        }
+        function moveTouch(e){
+          if(!drawing) return;
+          e.preventDefault();
+          const rect = c.getBoundingClientRect();
+          const t = e.touches[0];
+          const x = t.clientX-rect.left;
+          const y = t.clientY-rect.top;
+          ctx.beginPath();
+          ctx.moveTo(lastX,lastY);
+          ctx.lineTo(x,y);
+          ctx.stroke();
+          [lastX,lastY]=[x,y];
+        }
+      }
+
+      function completeInspection(){
+        const tenantCanv = document.getElementById('tenant-signature');
+        const agentCanv = document.getElementById('agent-signature');
+        if(tenantCanv && agentCanv){
+          state.currentInspection.tenantSignature = tenantCanv.toDataURL();
+          state.currentInspection.agentSignature = agentCanv.toDataURL();
+        }
+        saveCurrentInspection();
+        createSummaryWindow();
+      }
+
+      // ========== Summary Window ==========
+      function createSummaryWindow(){
+        const wId= `window-summary-${state.nextWindowId++}`;
+        const wHtml=`
+          <div id="${wId}" class="window" style="top:50px; left:100px; width:700px;">
+            <div class="window-header">
+              <div class="window-title">Inspection Summary</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+                <div class="window-control window-minimize" data-window="${wId}"></div>
+                <div class="window-control window-maximize" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <h2>Inspection Completed!</h2>
+              <p>Property: ${state.currentInspection.propertyAddress}</p>
+              <p>Date: ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
+              <p>Agent: ${state.currentInspection.agentName}</p>
+              <p>Tenant: ${state.currentInspection.tenantName}</p>
+              
+              <h3>Rooms Inspected: ${state.currentInspection.rooms.length}</h3>
+              <ul style="list-style:none; padding:0; margin:1rem 0; background:var(--bg-secondary); border:var(--border-width) solid var(--border-color); border-radius:5px; max-height:300px; overflow-y:auto;">
+                ${
+                  state.currentInspection.rooms.map(r=>`
+                    <li style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                      <strong>${r.name}</strong> - Condition: ${r.condition}/10
+                      ${
+                        r.urgent
+                          ? `<span style="background:var(--error); color:#fff; padding:0.25rem 0.5rem; border-radius:3px; font-size:0.8rem;">URGENT</span>`
+                          : ''
+                      }
+                    </li>
+                  `).join('')
+                }
+              </ul>
+
+              <div style="margin-bottom:30px;">
+                <h3>Signatures</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:20px;">
+                  <div style="flex:1; min-width:300px;">
+                    <p><strong>Tenant Signature:</strong></p>
+                    ${
+                      state.currentInspection.tenantSignature
+                        ? `<img src="${state.currentInspection.tenantSignature}" alt="Tenant Signature" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                        : `<p>No signature provided.</p>`
+                    }
+                  </div>
+                  <div style="flex:1; min-width:300px;">
+                    <p><strong>Agent Signature:</strong></p>
+                    ${
+                      state.currentInspection.agentSignature
+                        ? `<img src="${state.currentInspection.agentSignature}" alt="Agent Signature" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                        : `<p>No signature provided.</p>`
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px; display:flex; gap:10px;">
+                <button id="export-pdf-summary-btn" class="start-btn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                <button id="generate-qr-btn" class="start-btn"><i class="fas fa-qrcode"></i> Generate QR Code</button>
+                <button id="return-home-btn" class="start-btn"><i class="fas fa-home"></i> Return to Home</button>
+              </div>
+              
+              <div id="qrcode-container" style="margin-top:20px; text-align:center; display:none;"></div>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+
+        const wEl = document.getElementById(wId);
+        wEl.querySelector('.window-close').addEventListener('click',()=> closeWindow(wId));
+        wEl.querySelector('.window-minimize').addEventListener('click',()=> minimizeWindow(wId));
+        wEl.querySelector('.window-maximize').addEventListener('click',()=> maximizeWindow(wId));
+
+        wEl.querySelector('#export-pdf-summary-btn').addEventListener('click', exportToPDF);
+        wEl.querySelector('#generate-qr-btn').addEventListener('click', generateQRCode);
+        wEl.querySelector('#return-home-btn').addEventListener('click', returnToHome);
+
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+        wEl.classList.add('animate-pop');
+      }
+
+      function generateQRCode(){
+        const qrC = document.getElementById('qrcode-container');
+        qrC.style.display='block';
+        qrC.innerHTML='';
+        const data = {
+          id: state.currentInspection.id,
+          propertyAddress: state.currentInspection.propertyAddress,
+          date: state.currentInspection.date
+        };
+        const dUrl = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
+        new QRCode(qrC, { text:dUrl, width:200, height:200});
+      }
+
+      // ========== Save / Load / Delete ==========
+      function saveCurrentInspection(){
+        if(!state.currentInspection) return;
+        const idx = state.savedInspections.findIndex(i=> i.id=== state.currentInspection.id);
+        if(idx!==-1){
+          state.savedInspections[idx] = {...state.currentInspection};
+        } else {
+          state.savedInspections.push({...state.currentInspection});
+        }
+        saveStateToLocal();
+        alert("Inspection saved!");
+      }
+
+      function loadInspection(id){
+        const found = state.savedInspections.find(i=> i.id===id);
+        if(!found) return;
+        state.currentInspection = {...found};
+        elements.startScreen.classList.remove('active');
+        elements.mainInterface.classList.add('active');
+        // property address must already exist, so jump directly to Rooms
+        createRoomsManagementWindow();
+      }
+
+      function deleteInspection(id){
+        const idx = state.savedInspections.findIndex(i=>i.id===id);
+        if(idx!==-1){
+          state.savedInspections.splice(idx,1);
+          saveStateToLocal();
+          const srList = document.getElementById('saved-reports-list');
+          srList.innerHTML= renderSavedReportsList();
+          alert("Inspection deleted.");
+        }
+      }
+
+      // ========== PDF Export (Summary) ==========
+      function exportToPDF(){
+        if(!state.currentInspection){
+          alert("No current inspection to export!");
+          return;
+        }
+        // create ephemeral window
+        const wId = `window-pdf-${state.nextWindowId++}`;
+        const wHtml=`
+          <div id="${wId}" class="window" style="top:50px; left:50px; width:800px; height:600px;">
+            <div class="window-header">
+              <div class="window-title">Generating PDF...</div>
+              <div class="window-controls">
+                <div class="window-control window-close" data-window="${wId}"></div>
+              </div>
+            </div>
+            <div class="window-content">
+              <div id="pdf-content" style="padding:20px; background-color:white;">
+                <div style="text-align:center; margin-bottom:20px;">
+                  <h1 style="color:#3b82f6;">InspectSpace</h1>
+                  <h2>Property Inspection Report</h2>
+                </div>
+                <div style="margin-bottom:30px;">
+                  <h3>Property Details</h3>
+                  <p><strong>Address:</strong> ${state.currentInspection.propertyAddress}</p>
+                  <p><strong>Inspection Date:</strong> ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
+                  <p><strong>Agent:</strong> ${state.currentInspection.agentName}</p>
+                  <p><strong>Tenant:</strong> ${state.currentInspection.tenantName}</p>
+                </div>
+                <div style="margin-bottom:30px;">
+                  <h3>Room Inspections</h3>
+                  ${
+                    state.currentInspection.rooms.map(r=>`
+                      <div style="margin-bottom:20px; padding:10px; border:1px solid #d1d5db; border-radius:5px; ${r.urgent?'border-left:5px solid #ef4444;':''}">
+                        <h4>${r.name} ${r.urgent?'<span style="color:#ef4444;">(URGENT)</span>':''}</h4>
+                        <p><strong>Condition:</strong> ${r.condition}/10</p>
+                        <p><strong>Notes:</strong> ${r.notes||'No notes.'}</p>
+                        ${
+                          r.photos.length
+                            ? `<div><p><strong>Photos:</strong></p>
+                                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
+                                  ${r.photos.map(p=>`<img src="${p.data}" alt="${p.name}" style="max-width:200px; max-height:150px; border-radius:5px;">`).join('')}
+                                </div>
+                              </div>`
+                            : `<p><strong>Photos:</strong> No photos provided.</p>`
+                        }
+                      </div>
+                    `).join('')
+                  }
+                </div>
+                <div style="margin-bottom:30px;">
+                  <h3>Signatures</h3>
+                  <div style="display:flex; flex-wrap:wrap; gap:20px;">
+                    <div style="flex:1; min-width:300px;">
+                      <p><strong>Tenant Signature:</strong></p>
+                      ${
+                        state.currentInspection.tenantSignature
+                          ? `<img src="${state.currentInspection.tenantSignature}" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                          : `<p>No signature provided.</p>`
+                      }
+                    </div>
+                    <div style="flex:1; min-width:300px;">
+                      <p><strong>Agent Signature:</strong></p>
+                      ${
+                        state.currentInspection.agentSignature
+                          ? `<img src="${state.currentInspection.agentSignature}" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                          : `<p>No signature provided.</p>`
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align:center; margin-top:50px; color:#6b7280; font-size:0.8rem;">
+                  <p>Generated by InspectSpace - ${new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+
+        document.querySelector(`#${wId} .window-close`).addEventListener('click',()=> closeWindow(wId));
+
+        // generate after short delay
+        setTimeout(()=>{
+          const el = document.getElementById('pdf-content');
+          const opt = {
+            margin:10,
+            filename: `InspectSpace_${(state.currentInspection.propertyAddress||'').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+            image:{ type:'jpeg', quality:0.98},
+            html2canvas:{ scale:2},
+            jsPDF:{ unit:'mm', format:'a4', orientation:'portrait'}
+          };
+          html2pdf().set(opt).from(el).save().then(()=>{
+            const tEl = document.querySelector(`#${wId} .window-title`);
+            if(tEl) tEl.textContent = 'PDF Generated';
+          });
+        },1000);
+      }
+
+      // ========== Return Home ==========
+      function returnToHome(){
+        closeAllWindows();
+        elements.mainInterface.classList.remove('active');
+        elements.startScreen.classList.add('active');
+        state.currentInspection=null;
+      }
+
+      // ========== Toggle Settings Panel ==========
+      function toggleSettingsPanel(){
+        elements.settingsPanel.classList.toggle('active');
+      }
+
+      function toggleDarkMode(){
+        state.darkMode=!state.darkMode;
+        document.getElementById('dark-mode-toggle').classList.toggle('active', state.darkMode);
+        if(state.darkMode){
+          document.body.setAttribute('data-theme','dark');
+        } else {
+          document.body.setAttribute('data-theme','light');
+        }
+        saveStateToLocal();
+      }
+
+      function toggleHighContrast(){
+        state.highContrast=!state.highContrast;
+        document.getElementById('high-contrast-toggle').classList.toggle('active', state.highContrast);
+        document.body.classList.toggle('high-contrast', state.highContrast);
+        saveStateToLocal();
+      }
+
+      function decreaseFontSize(){
+        if(state.fontSize>1){
+          document.body.classList.remove(`font-size-${state.fontSize}`);
+          state.fontSize--;
+          document.body.classList.add(`font-size-${state.fontSize}`);
+          saveStateToLocal();
+        }
+      }
+      function resetFontSize(){
+        document.body.classList.remove(`font-size-${state.fontSize}`);
+        state.fontSize=2;
+        document.body.classList.add(`font-size-${state.fontSize}`);
+        saveStateToLocal();
+      }
+      function increaseFontSize(){
+        if(state.fontSize<3){
+          document.body.classList.remove(`font-size-${state.fontSize}`);
+          state.fontSize++;
+          document.body.classList.add(`font-size-${state.fontSize}`);
+          saveStateToLocal();
+        }
+      }
+
+      // ========== Window Management ==========
+      function closeAllWindows(){
+        [...state.windows].forEach(wId=> closeWindow(wId));
+      }
+      function closeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.add('animate-pop');
+        wEl.style.opacity=0;
+        wEl.style.transform='scale(0.9)';
+        setTimeout(()=>{
+          wEl.remove();
+          const idx = state.windows.indexOf(wid);
+          if(idx!==-1) state.windows.splice(idx,1);
+        },300);
+      }
+      function minimizeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.toggle('minimized');
+        if(wEl.classList.contains('minimized')){
+          wEl.setAttribute('data-prev-height', wEl.style.height||'auto');
+          wEl.setAttribute('data-prev-width', wEl.style.width||'auto');
+          wEl.setAttribute('data-prev-top', wEl.style.top||'0');
+          wEl.setAttribute('data-prev-left', wEl.style.left||'0');
+          wEl.style.height='40px';
+          wEl.style.width='200px';
+          wEl.style.top='calc(100% - 50px)';
+          const offset = state.windows.indexOf(wid)*210;
+          wEl.style.left=`${offset}px`;
+          const content = wEl.querySelector('.window-content');
+          if(content) content.style.display='none';
+        } else {
+          wEl.style.height = wEl.getAttribute('data-prev-height');
+          wEl.style.width = wEl.getAttribute('data-prev-width');
+          wEl.style.top = wEl.getAttribute('data-prev-top');
+          wEl.style.left = wEl.getAttribute('data-prev-left');
+          const content = wEl.querySelector('.window-content');
+          if(content) content.style.display='block';
+        }
+      }
+      function maximizeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.toggle('maximized');
+        if(wEl.classList.contains('maximized')){
+          wEl.setAttribute('data-prev-height', wEl.style.height||'auto');
+          wEl.setAttribute('data-prev-width', wEl.style.width||'auto');
+          wEl.setAttribute('data-prev-top', wEl.style.top||'0');
+          wEl.setAttribute('data-prev-left', wEl.style.left||'0');
+          wEl.style.height='calc(100% - 50px)';
+          wEl.style.width='100%';
+          wEl.style.top='0';
+          wEl.style.left='0';
+        } else {
+          wEl.style.height = wEl.getAttribute('data-prev-height');
+          wEl.style.width = wEl.getAttribute('data-prev-width');
+          wEl.style.top = wEl.getAttribute('data-prev-top');
+          wEl.style.left = wEl.getAttribute('data-prev-left');
+        }
+      }
+      function bringWindowToFront(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        state.zIndex++;
+        wEl.style.zIndex= state.zIndex;
+        state.windows.forEach(id=>{
+          const we = document.getElementById(id);
+          if(we) we.classList.remove('active');
+        });
+        wEl.classList.add('active');
+      }
+
+      // Draggable logic
+      function dragMoveListener(e){
+        const tgt = e.target;
+        const x = (parseFloat(tgt.getAttribute('data-x'))||0)+ e.dx;
+        const y = (parseFloat(tgt.getAttribute('data-y'))||0)+ e.dy;
+        tgt.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+        tgt.setAttribute('data-x',x);
+        tgt.setAttribute('data-y',y);
+      }
+      function dragStartListener(e){
+        bringWindowToFront(e.target.id);
+      }
+
+      // random ID
+      function generateId(){
+        return '_'+Math.random().toString(36).substr(2,9);
+      }
+
+      init();
+    });
+  </script>
+</body>
+</html>
