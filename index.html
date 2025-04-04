@@ -1,87 +1,1453 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Property Tools</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROP//TOOLBOX - Digital Property Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* Basic reset & minimal styles */
+    /* ======= CORE VARIABLES ======= */
+    :root {
+      --neon-pink: #FF2A6D;
+      --neon-blue: #05D9E8;
+      --neon-purple: #D300C5;
+      --neon-green: #39FF14;
+      --dark-bg: #05080F;
+      --darker-bg: #02050A;
+      --medium-bg: #0A0E1A;
+      --light-bg: #131A2F;
+      --text: #D1DDFF;
+      --text-dim: #6B7A99;
+      --glitch-speed: 0.55s;
+    }
+
+    /* ======= RESET & BASE STYLES ======= */
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
+      box-sizing: border-box;
     }
+
     body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background-color: #f2f2f2;
-      color: #333;
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: var(--dark-bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+      cursor: crosshair;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(5, 217, 232, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 85% 60%, rgba(211, 0, 197, 0.1) 0%, transparent 30%);
     }
-    header, footer {
-      background-color: #4a76a8;
-      color: white;
-      padding: 1rem;
-      text-align: center;
+
+    /* ======= SCANLINES EFFECT ======= */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.3;
     }
-    h1 {
+
+    /* ======= SCROLLBAR ======= */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--darker-bg);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--neon-pink);
+      border-radius: 0;
+    }
+
+    /* ======= LAYOUT CONTAINER ======= */
+    .cyber-container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-gap: 20px;
+    }
+
+    /* ======= CYBERPUNK TEXT EFFECTS ======= */
+    .cyber-glitch-1 {
+      position: relative;
+      animation: glitch-1 var(--glitch-speed) infinite;
+    }
+
+    .cyber-glitch-2 {
+      position: relative;
+      animation: glitch-2 calc(var(--glitch-speed) * 1.5) infinite;
+    }
+
+    @keyframes glitch-1 {
+      0%, 100% { transform: none; opacity: 1; }
+      7% { transform: skew(-0.5deg, -0.9deg); opacity: 0.75; }
+      10% { transform: none; opacity: 1; }
+      27% { transform: none; opacity: 1; }
+      30% { transform: skew(0.8deg, -0.1deg); opacity: 0.75; }
+      35% { transform: none; opacity: 1; }
+      52% { transform: none; opacity: 1; }
+      55% { transform: skew(-1deg, 0.2deg); opacity: 0.75; }
+      50% { transform: none; opacity: 1; }
+      72% { transform: none; opacity: 1; }
+      75% { transform: skew(0.4deg, 1deg); opacity: 0.75; }
+      80% { transform: none; opacity: 1; }
+      100% { transform: none; opacity: 1; }
+    }
+
+    @keyframes glitch-2 {
+      0%, 100% { transform: none; opacity: 1; }
+      7% { transform: skew(0.3deg, -0.6deg); opacity: 0.75; }
+      10% { transform: none; opacity: 1; }
+      27% { transform: none; opacity: 1; }
+      30% { transform: skew(-0.4deg, 0.8deg); opacity: 0.75; }
+      35% { transform: none; opacity: 1; }
+      52% { transform: none; opacity: 1; }
+      55% { transform: skew(0.5deg, -0.3deg); opacity: 0.75; }
+      50% { transform: none; opacity: 1; }
+      72% { transform: none; opacity: 1; }
+      75% { transform: skew(-0.6deg, 0.4deg); opacity: 0.75; }
+      80% { transform: none; opacity: 1; }
+      100% { transform: none; opacity: 1; }
+    }
+
+    .text-glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    .text-glitch::before,
+    .text-glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.8;
+    }
+
+    .text-glitch::before {
+      color: var(--neon-blue);
+      z-index: -1;
+      animation: glitch-text 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+      animation-delay: 0.1s;
+    }
+
+    .text-glitch::after {
+      color: var(--neon-pink);
+      z-index: -2;
+      animation: glitch-text 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+      animation-delay: 0.2s;
+    }
+
+    @keyframes glitch-text {
+      0% {
+        transform: translate(0);
+      }
+      20% {
+        transform: translate(-3px, 3px);
+      }
+      40% {
+        transform: translate(-3px, -3px);
+      }
+      60% {
+        transform: translate(3px, 3px);
+      }
+      80% {
+        transform: translate(3px, -3px);
+      }
+      100% {
+        transform: translate(0);
+      }
+    }
+
+    /* ======= CYBER HEADINGS ======= */
+    .cyber-heading-hero {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2rem, 6vw, 4.5rem);
+      line-height: 1.1;
+      text-transform: uppercase;
       margin: 0;
-      font-size: 2rem;
+      margin-bottom: 24px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 2;
+      letter-spacing: -0.5px;
+      text-shadow: 
+        0 0 10px rgba(255, 42, 109, 0.5),
+        0 0 20px rgba(255, 42, 109, 0.3);
     }
-    main {
+
+    .cyber-heading {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .cyber-heading::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 80%;
+      background: var(--neon-purple);
+    }
+
+    .cyber-heading-sm {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .cyber-subheading {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      max-width: 80%;
+      margin-bottom: 40px;
+    }
+
+    /* ======= CYBER BORDERS & SECTIONS ======= */
+    .cyber-panel {
+      position: relative;
+      background: var(--medium-bg);
+      padding: 24px;
+      border: 1px solid rgba(5, 217, 232, 0.2);
+      clip-path: polygon(
+        0 0,
+        calc(100% - 20px) 0,
+        100% 20px,
+        100% 100%,
+        20px 100%,
+        0 calc(100% - 20px)
+      );
+      margin-bottom: 30px;
+    }
+
+    .cyber-panel::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-purple));
+      z-index: -1;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 25px) 0,
+        100% 25px,
+        100% 100%,
+        25px 100%,
+        0 calc(100% - 25px)
+      );
+      opacity: 0.5;
+    }
+
+    .cyber-sidebar-panel {
+      background: var(--light-bg);
+      padding: 20px;
+      border-top: 2px solid var(--neon-blue);
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .cyber-sidebar-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 30%;
+      height: 2px;
+      background: var(--neon-pink);
+    }
+
+    /* ======= NAVIGATION ======= */
+    .cyber-navbar {
+      padding: 20px 0;
+      position: relative;
+      z-index: 100;
+    }
+
+    .cyber-navbar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cyber-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .cyber-logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 24px;
+      text-transform: uppercase;
+      color: var(--text);
+      letter-spacing: 1px;
+      position: relative;
+    }
+
+    .cyber-logo-text span {
+      color: var(--neon-pink);
+    }
+
+    .cyber-logo-text::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--neon-pink), transparent);
+    }
+
+    .cyber-nav-links {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .cyber-nav-link {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text);
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+      position: relative;
+      padding: 5px 0;
+    }
+
+    .cyber-nav-link::before {
+      content: '[';
+      position: absolute;
+      left: -10px;
+      color: var(--neon-green);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      transform: translateX(10px);
+    }
+
+    .cyber-nav-link::after {
+      content: ']';
+      position: absolute;
+      right: -10px;
+      color: var(--neon-green);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      transform: translateX(-10px);
+    }
+
+    .cyber-nav-link:hover {
+      color: var(--neon-green);
+    }
+
+    .cyber-nav-link:hover::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .cyber-nav-link:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ======= HERO SECTION ======= */
+    .cyber-hero {
+      position: relative;
+      padding: 60px 0 40px;
+      overflow: hidden;
+    }
+
+    .cyber-hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .cyber-hero-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--neon-pink);
+      font-size: 14px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+    }
+
+    .cyber-circuit {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.1;
+      background-image: 
+        radial-gradient(var(--neon-blue) 2px, transparent 2px),
+        linear-gradient(90deg, transparent 9px, var(--neon-blue) 10px, transparent 10px);
+      background-size: 20px 20px, 20px 2px;
+      pointer-events: none;
+    }
+
+    /* ======= SEARCH BAR ======= */
+    .cyber-search {
+      margin-bottom: 50px;
+      position: relative;
+    }
+
+    .cyber-search::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 0;
+      width: 10px;
+      height: 100%;
+      background: var(--neon-blue);
+      clip-path: polygon(0 0, 100% 15%, 100% 85%, 0 100%);
+    }
+
+    .cyber-search-content {
+      display: flex;
+    }
+
+    .cyber-input {
       flex: 1;
-      padding: 2rem;
+      padding: 16px 20px;
+      background: var(--darker-bg);
+      border: 1px solid var(--neon-blue);
+      font-size: 16px;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text);
+      clip-path: polygon(0 0, 100% 0, 98% 100%, 0 100%);
+    }
+
+    .cyber-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .cyber-input:focus {
+      outline: none;
+      border-color: var(--neon-pink);
+    }
+
+    .cyber-button {
+      padding: 0 30px;
+      background: var(--neon-pink);
+      color: var(--darker-bg);
+      font-weight: 700;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+      transition: 
+        transform 0.2s, 
+        background-color 0.2s, 
+        box-shadow 0.2s;
+      position: relative;
+      left: -10px;
+    }
+
+    .cyber-button:hover {
+      transform: translateY(-2px);
+      background-color: var(--neon-purple);
+      box-shadow: 0 0 15px rgba(211, 0, 197, 0.5);
+    }
+
+    .cyber-button:active {
+      transform: translateY(0);
+    }
+
+    /* ======= TOOL CARDS ======= */
+    .tools-row {
+      margin-bottom: 50px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+    }
+
+    .cyber-card {
+      background-color: var(--medium-bg);
+      border: 1px solid rgba(5, 217, 232, 0.3);
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+      min-height: 250px;
       display: flex;
       flex-direction: column;
+    }
+
+    .cyber-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 0 20px rgba(5, 217, 232, 0.2),
+        0 0 40px rgba(5, 217, 232, 0.1);
+    }
+
+    .cyber-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(5, 217, 232, 0.05), rgba(211, 0, 197, 0.05));
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .cyber-card:hover::before {
+      opacity: 1;
+    }
+
+    .cyber-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+    }
+
+    .cyber-card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    .cyber-card-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      padding: 4px 8px;
+      background-color: rgba(57, 255, 20, 0.1);
+      color: var(--neon-green);
+      border-radius: 2px;
+    }
+
+    .cyber-card-content {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cyber-card-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+
+    .cyber-card:nth-child(1) .cyber-card-icon {
+      color: var(--neon-blue);
+    }
+
+    .cyber-card:nth-child(2) .cyber-card-icon {
+      color: var(--neon-pink);
+    }
+
+    .cyber-card:nth-child(3) .cyber-card-icon {
+      color: var(--neon-purple);
+    }
+
+    .cyber-card-desc {
+      font-size: 15px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      color: var(--text-dim);
+      flex-grow: 1;
+    }
+
+    .cyber-card-link {
+      align-self: flex-end;
+      text-decoration: none;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--neon-blue);
+      font-size: 15px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s, transform 0.2s;
+      position: relative;
+    }
+
+    .cyber-card:nth-child(1) .cyber-card-link {
+      color: var(--neon-blue);
+    }
+
+    .cyber-card:nth-child(2) .cyber-card-link {
+      color: var(--neon-pink);
+    }
+
+    .cyber-card:nth-child(3) .cyber-card-link {
+      color: var(--neon-purple);
+    }
+
+    .cyber-card-link::before {
+      content: '>';
+      position: absolute;
+      right: -15px;
+      opacity: 0;
+      transform: translateX(-5px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .cyber-card-link:hover {
+      transform: translateX(-5px);
+    }
+
+    .cyber-card-link:hover::before {
+      opacity: 1;
+      transform: translateX(10px);
+    }
+
+    /* ======= SIDEBAR WIDGETS ======= */
+    .cyber-recent-list {
+      list-style: none;
+    }
+
+    .cyber-recent-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .cyber-recent-item:hover {
+      transform: translateX(5px);
+    }
+
+    .cyber-recent-item:last-child {
+      border-bottom: none;
+    }
+
+    .cyber-recent-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
       align-items: center;
       justify-content: center;
+      margin-right: 12px;
+      font-size: 14px;
+      background: rgba(5, 217, 232, 0.1);
+      color: var(--neon-blue);
     }
-    .tools-list {
-      margin-top: 2rem;
-      list-style: none;
+
+    .cyber-recent-icon.inspection {
+      background: rgba(5, 217, 232, 0.1);
+      color: var(--neon-blue);
+    }
+
+    .cyber-recent-icon.rental {
+      background: rgba(255, 42, 109, 0.1);
+      color: var(--neon-pink);
+    }
+
+    .cyber-recent-icon.utilities {
+      background: rgba(211, 0, 197, 0.1);
+      color: var(--neon-purple);
+    }
+
+    .cyber-recent-info {
+      flex: 1;
+    }
+
+    .cyber-recent-address {
+      font-weight: 500;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .cyber-recent-date {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .cyber-help-content {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 16px;
     }
-    .tools-list a {
-      display: block;
-      padding: 1rem 1.5rem;
-      background-color: #fff;
+
+    .cyber-help-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+
+    .cyber-help-button {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(5, 217, 232, 0.1);
+      color: var(--neon-blue);
+      padding: 10px 16px;
+      font-family: 'Share Tech Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 14px;
       text-decoration: none;
-      color: #444;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: background-color 0.2s;
-      font-weight: bold;
+      border: 1px solid var(--neon-blue);
+      transition: background 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
     }
-    .tools-list a:hover {
-      background-color: #eef;
+
+    .cyber-help-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(5, 217, 232, 0.2), transparent);
+      transition: left 0.7s;
     }
-    footer p {
-      margin: 0;
-      font-size: 0.9rem;
+
+    .cyber-help-button:hover {
+      background: rgba(5, 217, 232, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .cyber-help-button:hover::before {
+      left: 100%;
+    }
+
+    /* ======= NOTIFICATION BAR ======= */
+    .cyber-notification {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(120deg, var(--neon-pink), var(--neon-purple));
+      padding: 5px;
+      max-width: 320px;
+      z-index: 1000;
+      clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+      animation: slideIn 0.5s forwards;
+      animation-delay: 1s;
+      transform: translateX(200%);
+    }
+
+    @keyframes slideIn {
+      to {
+        transform: translateX(0);
+      }
+    }
+
+    .cyber-notification-inner {
+      background: var(--darker-bg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      position: relative;
+    }
+
+    .cyber-notification-content {
+      flex: 1;
+    }
+
+    .cyber-notification-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--neon-pink);
+    }
+
+    .cyber-notification-text {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .cyber-notification-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    .cyber-notification-close:hover {
+      color: var(--neon-pink);
+    }
+
+    /* ======= DATA VISUALIZATION ELEMENTS ======= */
+    .data-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    .data-stat {
+      flex: 1;
+      padding: 16px;
+      background: rgba(5, 217, 232, 0.05);
+      border-left: 2px solid var(--neon-blue);
+      margin-right: 20px;
+    }
+
+    .data-stat:nth-child(2) {
+      border-color: var(--neon-pink);
+      background: rgba(255, 42, 109, 0.05);
+    }
+
+    .data-stat:nth-child(3) {
+      border-color: var(--neon-green);
+      background: rgba(57, 255, 20, 0.05);
+      margin-right: 0;
+    }
+
+    .data-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .data-stat:nth-child(1) .data-value {
+      color: var(--neon-blue);
+    }
+
+    .data-stat:nth-child(2) .data-value {
+      color: var(--neon-pink);
+    }
+
+    .data-stat:nth-child(3) .data-value {
+      color: var(--neon-green);
+    }
+
+    .data-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+
+    /* ======= CYBER FOOTER ======= */
+    .cyber-footer {
+      margin-top: 60px;
+      padding: 40px 0 20px;
+      background: var(--medium-bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cyber-footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-purple));
+    }
+
+    .cyber-footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+
+    .cyber-footer-left {
+      max-width: 300px;
+    }
+
+    .cyber-footer-logo {
+      margin-bottom: 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      text-transform: uppercase;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+
+    .cyber-footer-logo span {
+      color: var(--neon-pink);
+    }
+
+    .cyber-footer-text {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .cyber-footer-right {
+      display: flex;
+      gap: 40px;
+    }
+
+    .cyber-footer-column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cyber-footer-heading {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .cyber-footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cyber-footer-link {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s, transform 0.2s;
+      display: inline-block;
+    }
+
+    .cyber-footer-link:hover {
+      color: var(--neon-blue);
+      transform: translateX(5px);
+    }
+
+    .cyber-footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid rgba(5, 217, 232, 0.1);
+    }
+
+    .cyber-copyright {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .cyber-footer-social {
+      display: flex;
+      gap: 15px;
+    }
+
+    .cyber-social-link {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 217, 232, 0.1);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .cyber-social-link:hover {
+      background: var(--neon-blue);
+      color: var(--darker-bg);
+      transform: translateY(-3px);
+    }
+
+    .cyber-easter-egg {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      opacity: 0.5;
+    }
+
+    /* ======= RESPONSIVE STYLES ======= */
+    @media (max-width: 992px) {
+      .cyber-panels {
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .cyber-sidebar {
+        width: 100%;
+      }
+
+      .data-grid {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .data-stat {
+        margin-right: 0;
+        margin-bottom: 15px;
+      }
+
+      .cyber-footer-content {
+        flex-direction: column;
+        gap: 30px;
+      }
+
+      .cyber-footer-left {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .cyber-navbar-content {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .cyber-logo {
+        margin: 0 auto;
+      }
+
+      .cyber-footer-bottom {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .cyber-footer-right {
+        flex-wrap: wrap;
+        gap: 30px;
+      }
+
+      .cyber-easter-egg {
+        position: static;
+        transform: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .cyber-search-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .cyber-button {
+        width: 100%;
+        clip-path: none;
+        left: 0;
+      }
+
+      .cyber-input {
+        width: 100%;
+        clip-path: none;
+      }
+
+      .cyber-nav-links {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .cyber-hero-badge {
+        width: 100%;
+        text-align: center;
+      }
+
+      .cyber-heading-hero {
+        font-size: 2rem;
+        text-align: center;
+      }
+
+      .cyber-subheading {
+        max-width: 100%;
+        text-align: center;
+      }
+    }
+
+    /* ======= TERMINAL ANIMATION ======= */
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: var(--neon-blue) }
+    }
+
+    .cyber-terminal {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: var(--neon-blue);
+      background: var(--darker-bg);
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid var(--neon-blue);
+      position: relative;
+    }
+
+    .cyber-terminal::before {
+      content: 'SYSTEM//';
+      position: absolute;
+      top: -10px;
+      left: 10px;
+      background: var(--darker-bg);
+      padding: 0 5px;
+      font-size: 10px;
+      color: var(--neon-blue);
+    }
+
+    .terminal-line {
+      display: flex;
+    }
+
+    .terminal-prompt {
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+
+    .terminal-text {
+      position: relative;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 0;
+      animation: 
+        typing 3.5s steps(40, end) forwards,
+        blink-caret .75s step-end infinite;
+      animation-delay: var(--delay, 0s);
+      border-right: .15em solid var(--neon-blue);
+    }
+
+    .terminal-text.line2 {
+      --delay: 3.5s;
+    }
+
+    .terminal-text.line3 {
+      --delay: 7s;
     }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="cyber-navbar">
+    <div class="cyber-container">
+      <div class="cyber-navbar-content">
+        <a href="#" class="cyber-logo">
+          <div class="cyber-logo-text"><span>PROP</span>//TOOLBOX</div>
+        </a>
+        <div class="cyber-nav-links">
+          <a href="#" class="cyber-nav-link">DASHBOARD</a>
+          <a href="#" class="cyber-nav-link">TOOLS</a>
+          <a href="#" class="cyber-nav-link">REPORTS</a>
+          <a href="#" class="cyber-nav-link">PROFILE</a>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-  <header>
-    <h1>My Property Tools</h1>
-  </header>
+  <!-- Hero Section -->
+  <section class="cyber-hero">
+    <div class="cyber-container">
+      <div class="cyber-hero-content">
+        <div class="cyber-hero-badge cyber-glitch-1">SYSTEM ONLINE</div>
+        <h1 class="cyber-heading-hero text-glitch" data-text="PROPERTY MANAGEMENT SUITE">PROPERTY MANAGEMENT SUITE</h1>
+        <p class="cyber-subheading">Advanced digital toolkit for property inspection, financial analysis and utility management. Access all systems through a single interface.</p>
+        
+        <!-- Terminal Animation -->
+        <div class="cyber-terminal">
+          <div class="terminal-line">
+            <div class="terminal-prompt">></div>
+            <div class="terminal-text">Initializing property management systems...</div>
+          </div>
+          <div class="terminal-line">
+            <div class="terminal-prompt">></div>
+            <div class="terminal-text line2">Database connection established. Access granted.</div>
+          </div>
+          <div class="terminal-line">
+            <div class="terminal-prompt">></div>
+            <div class="terminal-text line3">Ready to process property data. Enter command:</div>
+          </div>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="cyber-search">
+          <div class="cyber-search-content">
+            <input type="text" class="cyber-input" placeholder="PASTE PROPERTY ADDRESS OR ID#" />
+            <button class="cyber-button">ANALYZE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cyber-circuit"></div>
+  </section>
 
+  <!-- Main Content Area -->
   <main>
-    <p>Welcome to my collection of property/real estate utilities! Select a tool below:</p>
-    <ul class="tools-list">
-      <li><a href="Inspectioniser.html">Inspectioniser</a></li>
-      <li><a href="RentalCalc.html">Rental Calculator</a></li>
-      <li><a href="Utilities.html">Utilities Tool</a></li>
-    </ul>
+    <div class="cyber-container">
+      <!-- Property Stats -->
+      <div class="data-grid">
+        <div class="data-stat">
+          <div class="data-value">24</div>
+          <div class="data-label">Active Properties</div>
+        </div>
+        <div class="data-stat">
+          <div class="data-value">$8.2K</div>
+          <div class="data-label">Avg Monthly Revenue</div>
+        </div>
+        <div class="data-stat">
+          <div class="data-value">92%</div>
+          <div class="data-label">Utility Efficiency</div>
+        </div>
+      </div>
+
+      <!-- Main Panel -->
+      <div class="cyber-panels" style="display: flex; gap: 30px;">
+        <div style="flex: 1;">
+          <h2 class="cyber-heading cyber-glitch-2">PROPERTY TOOLS</h2>
+          
+          <!-- Tool Cards -->
+          <div class="tools-row">
+            <!-- Inspection Tool -->
+            <div class="cyber-card">
+              <div class="cyber-card-header">
+                <h3 class="cyber-card-title">INSPECTIONISER</h3>
+                <div class="cyber-card-badge">v2.4</div>
+              </div>
+              <div class="cyber-card-content">
+                <div class="cyber-card-icon">🔍</div>
+                <p class="cyber-card-desc">Generate detailed property inspection reports with AI-assisted defect detection and automatic documentation.</p>
+                <a href="Inspectioniser.html" class="cyber-card-link">LAUNCH SYSTEM</a>
+              </div>
+            </div>
+
+            <!-- Rental Calculator -->
+            <div class="cyber-card">
+              <div class="cyber-card-header">
+                <h3 class="cyber-card-title">RENTAL CALC</h3>
+                <div class="cyber-card-badge">v3.1</div>
+              </div>
+              <div class="cyber-card-content">
+                <div class="cyber-card-icon">💰</div>
+                <p class="cyber-card-desc">Predictive rent analysis tool using market data to optimize property income and tenant affordability factors.</p>
+                <a href="RentalCalc.html" class="cyber-card-link">LAUNCH SYSTEM</a>
+              </div>
+            </div>
+
+            <!-- Utilities Tool -->
+            <div class="cyber-card">
+              <div class="cyber-card-header">
+                <h3 class="cyber-card-title">UTILITIES</h3>
+                <div class="cyber-card-badge">v1.8</div>
+              </div>
+              <div class="cyber-card-content">
+                <div class="cyber-card-icon">⚡</div>
+                <p class="cyber-card-desc">Comprehensive utility tracking system for monitoring consumption patterns and generating cost distribution models.</p>
+                <a href="Utilities.html" class="cyber-card-link">LAUNCH SYSTEM</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="cyber-sidebar" style="width: 350px;">
+          <!-- Recent Activity -->
+          <div class="cyber-sidebar-panel">
+            <h3 class="cyber-heading-sm">RECENT ACTIVITY</h3>
+            <ul class="cyber-recent-list">
+              <li class="cyber-recent-item">
+                <div class="cyber-recent-icon inspection">🔍</div>
+                <div class="cyber-recent-info">
+                  <div class="cyber-recent-address">42 Maple Street, Unit 3B</div>
+                  <div class="cyber-recent-date">APR-02-2025 // 14:22:07</div>
+                </div>
+              </li>
+              <li class="cyber-recent-item">
+                <div class="cyber-recent-icon rental">💰</div>
+                <div class="cyber-recent-info">
+                  <div class="cyber-recent-address">128 Oakwood Drive</div>
+                  <div class="cyber-recent-date">MAR-29-2025 // 09:15:33</div>
+                </div>
+              </li>
+              <li class="cyber-recent-item">
+                <div class="cyber-recent-icon utilities">⚡</div>
+                <div class="cyber-recent-info">
+                  <div class="cyber-recent-address">75 Park Avenue, Units 1-4</div>
+                  <div class="cyber-recent-date">MAR-28-2025 // 16:47:02</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          
+          <!-- System Status -->
+          <div class="cyber-sidebar-panel">
+            <h3 class="cyber-heading-sm">SYSTEM STATUS</h3>
+            <div class="cyber-help-content">
+              <p class="cyber-help-text">All systems operational. Last data sync completed 37 minutes ago. Database integrity verified.</p>
+              <a href="#" class="cyber-help-button">SCHEDULE MAINTENANCE</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <footer>
-    <p>© 2025 Your Name or Company</p>
+  <!-- Notification -->
+  <div class="cyber-notification">
+    <div class="cyber-notification-inner">
+      <div class="cyber-notification-content">
+        <h4 class="cyber-notification-title">NEW FEATURE ONLINE</h4>
+        <p class="cyber-notification-text">Advanced pattern recognition algorithm now available in the Inspection module. Try it today.</p>
+      </div>
+      <button class="cyber-notification-close">✕</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="cyber-footer">
+    <div class="cyber-container">
+      <div class="cyber-footer-content">
+        <div class="cyber-footer-left">
+          <div class="cyber-footer-logo"><span>PROP</span>//TOOLBOX</div>
+          <p class="cyber-footer-text">Next-generation property management toolkit powered by advanced algorithms and data-driven insights.</p>
+        </div>
+        <div class="cyber-footer-right">
+          <div class="cyber-footer-column">
+            <h4 class="cyber-footer-heading">NAVIGATION</h4>
+            <div class="cyber-footer-links">
+              <a href="#" class="cyber-footer-link">Dashboard</a>
+              <a href="#" class="cyber-footer-link">Tools</a>
+              <a href="#" class="cyber-footer-link">Reports</a>
+              <a href="#" class="cyber-footer-link">Profile</a>
+            </div>
+          </div>
+          <div class="cyber-footer-column">
+            <h4 class="cyber-footer-heading">LEGAL</h4>
+            <div class="cyber-footer-links">
+              <a href="#" class="cyber-footer-link">Terms</a>
+              <a href="#" class="cyber-footer-link">Privacy</a>
+              <a href="#" class="cyber-footer-link">Compliance</a>
+              <a href="#" class="cyber-footer-link">Security</a>
+            </div>
+          </div>
+          <div class="cyber-footer-column">
+            <h4 class="cyber-footer-heading">SUPPORT</h4>
+            <div class="cyber-footer-links">
+              <a href="#" class="cyber-footer-link">Documentation</a>
+              <a href="#" class="cyber-footer-link">FAQs</a>
+              <a href="#" class="cyber-footer-link">Contact</a>
+              <a href="#" class="cyber-footer-link">Status</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cyber-footer-bottom">
+        <div class="cyber-copyright">© 2025 PROP//TOOLBOX // ALL RIGHTS RESERVED</div>
+        <div class="cyber-footer-social">
+          <a href="#" class="cyber-social-link">𝕏</a>
+          <a href="#" class="cyber-social-link">IG</a>
+          <a href="#" class="cyber-social-link">LI</a>
+          <a href="#" class="cyber-social-link">GH</a>
+        </div>
+      </div>
+      <div class="cyber-easter-egg">/* HOME IS WHERE THE HEX CODE IS */</div>
+    </div>
   </footer>
 
+  <script>
+    // Glitch effect on hover
+    const glitchElements = document.querySelectorAll('.cyber-card-title, .cyber-heading');
+    
+    glitchElements.forEach(element => {
+      element.addEventListener('mouseover', () => {
+        element.classList.add('cyber-glitch-1');
+      });
+      
+      element.addEventListener('mouseout', () => {
+        element.classList.remove('cyber-glitch-1');
+      });
+    });
+    
+    // Notification close button
+    const notification = document.querySelector('.cyber-notification');
+    const notificationClose = document.querySelector('.cyber-notification-close');
+    
+    notificationClose.addEventListener('click', () => {
+      notification.style.display = 'none';
+    });
+    
+    // Search bar animation
+    const searchInput = document.querySelector('.cyber-input');
+    
+    searchInput.addEventListener('focus', () => {
+      searchInput.style.borderColor = 'var(--neon-pink)';
+      searchInput.style.boxShadow = '0 0 10px rgba(255, 42, 109, 0.3)';
+    });
+    
+    searchInput.addEventListener('blur', () => {
+      searchInput.style.borderColor = 'var(--neon-blue)';
+      searchInput.style.boxShadow = 'none';
+    });
+    
+    // Add random glitch animation to elements periodically
+    function randomGlitch() {
+      const elements = Array.from(document.querySelectorAll('.cyber-card-title, .cyber-heading, .cyber-logo-text'));
+      const randomElement = elements[Math.floor(Math.random() * elements.length)];
+      
+      randomElement.classList.add('cyber-glitch-1');
+      
+      setTimeout(() => {
+        randomElement.classList.remove('cyber-glitch-1');
+      }, 2000);
+      
+      setTimeout(randomGlitch, Math.random() * 5000 + 3000);
+    }
+    
+    setTimeout(randomGlitch, 5000);
+  </script>
 </body>
 </html>
