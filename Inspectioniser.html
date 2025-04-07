@@ -1218,59 +1218,87 @@
       }
 
       // ===== Start Screen =====
-      function renderStartScreen() {
-        elements.startScreen.innerHTML = `
-          <div class="start-screen-content animate-pop">
-            <div class="logo"><span>INSPECT</span>IONISER</div>
-            <h1 class="cyber-glitch-1">NEURAL PROPERTY ASSESSMENT</h1>
-            
-            <!-- Terminal Animation -->
-            <div class="cyber-terminal">
-              <div class="terminal-line">
-                <div class="terminal-prompt">></div>
-                <div class="terminal-text">Initializing inspection systems...</div>
-              </div>
-              <div class="terminal-line">
-                <div class="terminal-prompt">></div>
-                <div class="terminal-text line2">Neural networks online. Access granted.</div>
-              </div>
-              <div class="terminal-line">
-                <div class="terminal-prompt">></div>
-                <div class="terminal-text line3">Ready to process property data. Enter command:</div>
-              </div>
-            </div>
-          </div>
-        `;
-        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
-        state.windows.push(wId);
-        bringWindowToFront(wId);
+      // Replace your broken renderStartScreen function with this fixed version
+function renderStartScreen() {
+  elements.startScreen.innerHTML = `
+    <div class="start-screen-content animate-pop">
+      <div class="logo"><span>INSPECT</span>IONISER</div>
+      <h1 class="cyber-glitch-1">NEURAL PROPERTY ASSESSMENT</h1>
+      
+      <!-- Terminal Animation -->
+      <div class="cyber-terminal">
+        <div class="terminal-line">
+          <div class="terminal-prompt">></div>
+          <div class="terminal-text">Initializing inspection systems...</div>
+        </div>
+        <div class="terminal-line">
+          <div class="terminal-prompt">></div>
+          <div class="terminal-text line2">Neural networks online. Access granted.</div>
+        </div>
+        <div class="terminal-line">
+          <div class="terminal-prompt">></div>
+          <div class="terminal-text line3">Ready to process property data. Enter command:</div>
+        </div>
+      </div>
+      
+      <p class="cyber-glitch-2">Advanced neural property assessment system for efficient inspections, documentation and analysis.</p>
+      
+      <!-- Emergency Continue Button -->
+      <button id="emergency-continue-btn" class="start-btn" style="margin:1.5rem auto; padding:1.5rem 3rem; font-size:1.5rem; display:block; background-color:var(--neon-green); box-shadow: 0 0 15px var(--neon-green); animation: pulse 1.5s infinite;">
+        <i class="fas fa-arrow-right"></i> CONTINUE TO INSPECTION
+      </button>
+      
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      </style>
+      
+      <div class="form-group" style="margin:2rem 0;">
+        <label class="form-label">OR DRAG AND DROP AN INSPECTION FORM FILE:</label>
+        <div id="form-dropzone" class="dropzone">
+          <i class="fas fa-file-import" style="font-size:2rem; margin-bottom:10px;"></i>
+          <p>Drag and drop your .docx or .txt form here</p>
+          <input type="file" id="form-file-input" style="display:none;" accept=".doc,.docx,.txt"/>
+        </div>
+      </div>
 
-        document.querySelector(`#${wId} .window-close`).addEventListener('click',()=> closeWindow(wId));
+      <div class="form-group">
+        <label class="form-label">PASTE MULTIPLE PROPERTIES (ONE PER LINE):</label>
+        <textarea id="multi-property-text" class="form-textarea" placeholder="Property #1&#10;Property #2&#10;..."></textarea>
+        <button id="create-multi-inspections-btn" class="start-btn">CREATE INSPECTIONS</button>
+      </div>
 
-        // generate after short delay
-        setTimeout(()=>{
-          const el = document.getElementById('pdf-content');
-          const opt = {
-            margin: 10,
-            filename: `INSPECTIONISER_${(state.currentInspection.propertyAddress||'').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          };
-          html2pdf().set(opt).from(el).save().then(()=>{
-            const tEl = document.querySelector(`#${wId} .window-title`);
-            if(tEl) tEl.textContent = 'PDF GENERATED';
-          });
-        }, 1000);
-      }
+      <button id="start-inspection-btn" class="start-btn" style="margin-top:1rem;">
+        <i class="fas fa-clipboard-check"></i> BEGIN NEW INSPECTION
+      </button>
 
-      // ========== Return Home ==========
-      function returnToHome(){
-        closeAllWindows();
-        elements.mainInterface.classList.remove('active');
-        elements.startScreen.classList.add('active');
-        state.currentInspection = null;
-      }
+      <div class="saved-reports" style="margin-top:2rem;">
+        <h3>SAVED INSPECTIONS</h3>
+        <ul class="report-list" id="saved-reports-list">
+          ${renderSavedReportsList()}
+        </ul>
+      </div>
+    </div>
+  `;
+  
+  // Add emergency continue button handler
+  document.getElementById('emergency-continue-btn').addEventListener('click', function() {
+    console.log('Emergency continue button clicked');
+    // Try standard function first
+    startNewInspection(false);
+    
+    // Fallback direct approach
+    elements.startScreen.classList.remove('active');
+    elements.mainInterface.classList.add('active');
+    
+    // Create property details window directly if needed
+    if (document.querySelectorAll('.window').length === 0) {
+      createPropertyDetailsWindow();
+    }
+  });
+}
 
       // ========== Toggle Settings Panel ==========
       function toggleSettingsPanel(){
