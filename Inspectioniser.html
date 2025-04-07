@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InspectSpace • Property Inspection Tool</title>
+  <title>INSPECTIONISER • Neural Property Assessment System</title>
   
   <!-- External dependencies -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -14,176 +14,360 @@
   <!-- QR Code generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
   <style>
+    /* ======= CORE VARIABLES ======= */
     :root {
-      /* Light mode colors */
-      --bg-primary: #f0f0ea;
-      --bg-secondary: #e8e8dd;
-      --bg-window: #ffffff;
-      --text-primary: #232320;
-      --text-secondary: #46463e;
-      --accent-primary: #6d8a96;
-      --accent-secondary: #9bc995;
-      --accent-tertiary: #e7a75c;
-      --border-color: #2c2c2a;
+      /* Cyberpunk color scheme */
+      --neon-pink: #FF2A6D;
+      --neon-blue: #05D9E8;
+      --neon-purple: #D300C5;
+      --neon-green: #39FF14;
+      --dark-bg: #05080F;
+      --darker-bg: #02050A;
+      --medium-bg: #0A0E1A;
+      --light-bg: #131A2F;
+      --text: #D1DDFF;
+      --text-dim: #6B7A99;
       --window-header: #7c90ac;
-      --window-shadow: rgba(0, 0, 0, 0.2);
       --window-border: #242424;
-      --success: #66a182;
-      --error: #d35d6e; /* used throughout code */
-      --warning: #e7a75c;
+      --window-shadow: rgba(0, 0, 0, 0.3);
+      
+      /* Error/success/warning states */
+      --success: #39FF14;
+      --error: #FF2A6D;
+      --warning: #FF9F1C;
       
       /* Size variables */
-      --window-radius: 6px;
+      --window-radius: 0px;
       --border-width: 2px;
-      --button-radius: 5px;
+      --button-radius: 0px;
+      --glitch-speed: 0.55s;
       
       /* Typography */
-      --font-heading: 'Arial Black', Gadget, sans-serif;
-      --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      --font-heading: 'Orbitron', sans-serif;
+      --font-body: 'Space Grotesk', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
       
       /* Transitions */
       --transition-speed: 0.2s;
     }
 
     [data-theme="dark"] {
-      --bg-primary: #212125;
-      --bg-secondary: #2c2c30;
-      --bg-window: #343438;
-      --text-primary: #e8e8e0;
-      --text-secondary: #b8b8b0;
-      --accent-primary: #7c9eb3;
-      --accent-secondary: #86b375;
-      --accent-tertiary: #e7b979;
-      --border-color: #5c5c5a;
+      --dark-bg: #030408;
+      --darker-bg: #010204;
+      --medium-bg: #050912;
+      --light-bg: #0D1221;
       --window-header: #546180;
-      --window-shadow: rgba(0, 0, 0, 0.4);
-      --window-border: #4a4a4a;
     }
 
+    /* ======= RESET & BASE STYLES ======= */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+    
     html, body {
       width: 100%;
       height: 100%;
       font-family: var(--font-body);
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
+      background-color: var(--dark-bg);
+      color: var(--text);
       font-size: 16px;
       line-height: 1.5;
       overflow: hidden;
       transition: background-color var(--transition-speed), color var(--transition-speed);
+      cursor: crosshair;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(5, 217, 232, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 85% 60%, rgba(211, 0, 197, 0.1) 0%, transparent 30%);
     }
     
-    /* Typography */
+    /* ======= SCANLINES EFFECT ======= */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+    
+    /* ======= SCROLLBAR ======= */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--darker-bg);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--neon-pink);
+      border-radius: 0;
+    }
+    
+    /* ======= CYBERPUNK TEXT EFFECTS ======= */
+    .cyber-glitch-1 {
+      position: relative;
+      animation: glitch-1 var(--glitch-speed) infinite;
+    }
+
+    .cyber-glitch-2 {
+      position: relative;
+      animation: glitch-2 calc(var(--glitch-speed) * 1.5) infinite;
+    }
+
+    @keyframes glitch-1 {
+      0%, 100% { transform: none; opacity: 1; }
+      7% { transform: skew(-0.5deg, -0.9deg); opacity: 0.75; }
+      10% { transform: none; opacity: 1; }
+      27% { transform: none; opacity: 1; }
+      30% { transform: skew(0.8deg, -0.1deg); opacity: 0.75; }
+      35% { transform: none; opacity: 1; }
+      52% { transform: none; opacity: 1; }
+      55% { transform: skew(-1deg, 0.2deg); opacity: 0.75; }
+      50% { transform: none; opacity: 1; }
+      72% { transform: none; opacity: 1; }
+      75% { transform: skew(0.4deg, 1deg); opacity: 0.75; }
+      80% { transform: none; opacity: 1; }
+      100% { transform: none; opacity: 1; }
+    }
+
+    @keyframes glitch-2 {
+      0%, 100% { transform: none; opacity: 1; }
+      7% { transform: skew(0.3deg, -0.6deg); opacity: 0.75; }
+      10% { transform: none; opacity: 1; }
+      27% { transform: none; opacity: 1; }
+      30% { transform: skew(-0.4deg, 0.8deg); opacity: 0.75; }
+      35% { transform: none; opacity: 1; }
+      52% { transform: none; opacity: 1; }
+      55% { transform: skew(0.5deg, -0.3deg); opacity: 0.75; }
+      50% { transform: none; opacity: 1; }
+      72% { transform: none; opacity: 1; }
+      75% { transform: skew(-0.6deg, 0.4deg); opacity: 0.75; }
+      80% { transform: none; opacity: 1; }
+      100% { transform: none; opacity: 1; }
+    }
+
+    .text-glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    .text-glitch::before,
+    .text-glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.8;
+    }
+
+    .text-glitch::before {
+      color: var(--neon-blue);
+      z-index: -1;
+      animation: glitch-text 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+      animation-delay: 0.1s;
+    }
+
+    .text-glitch::after {
+      color: var(--neon-pink);
+      z-index: -2;
+      animation: glitch-text 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+      animation-delay: 0.2s;
+    }
+
+    @keyframes glitch-text {
+      0% {
+        transform: translate(0);
+      }
+      20% {
+        transform: translate(-3px, 3px);
+      }
+      40% {
+        transform: translate(-3px, -3px);
+      }
+      60% {
+        transform: translate(3px, 3px);
+      }
+      80% {
+        transform: translate(3px, -3px);
+      }
+      100% {
+        transform: translate(0);
+      }
+    }
+    
+    /* ======= TYPOGRAPHY ======= */
     h1, h2, h3, h4, h5 {
       font-family: var(--font-heading);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      font-weight: 900;
+      font-weight: 700;
+      margin-bottom: 1rem;
     }
+    
     h1 {
       font-size: 3.2rem;
       margin-bottom: 1rem;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 2;
+      letter-spacing: -0.5px;
+      text-shadow: 
+        0 0 10px rgba(255, 42, 109, 0.5),
+        0 0 20px rgba(255, 42, 109, 0.3);
     }
+    
     h2 {
       font-size: 2.2rem;
       margin-bottom: 1rem;
     }
+    
     h3 {
       font-size: 1.6rem;
       margin-bottom: 0.75rem;
+      position: relative;
+      padding-left: 20px;
     }
+    
+    h3::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 80%;
+      background: var(--neon-purple);
+    }
+    
     p {
       margin-bottom: 1rem;
     }
     
-    /* Buttons */
+    /* ======= BUTTONS ======= */
     button, .btn {
       font-family: var(--font-heading);
       font-weight: bold;
       font-size: 1rem;
       text-transform: uppercase;
       padding: 0.75rem 1.5rem;
-      background-color: var(--accent-primary);
-      color: var(--bg-primary);
-      border: var(--border-width) solid var(--border-color);
+      background-color: var(--neon-pink);
+      color: var(--darker-bg);
+      border: var(--border-width) solid var(--window-border);
       border-radius: var(--button-radius);
       cursor: pointer;
       transition: all var(--transition-speed);
-      box-shadow: 4px 4px 0 var(--border-color);
+      box-shadow: 4px 4px 0 var(--window-border);
       margin: 0.5rem;
       letter-spacing: 0.05em;
+      clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
     }
+    
     button:hover, .btn:hover {
       transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0 var(--border-color);
-      filter: brightness(1.1);
+      box-shadow: 2px 2px 0 var(--window-border);
+      background-color: var(--neon-purple);
+      box-shadow: 0 0 15px rgba(211, 0, 197, 0.5);
     }
+    
     button:active, .btn:active {
       transform: translate(4px, 4px);
       box-shadow: none;
-      filter: brightness(0.9);
     }
+    
     .start-btn {
       font-size: 1.2rem;
-      background-color: var(--accent-secondary);
+      background-color: var(--neon-blue);
       padding: 1rem 2rem;
-      box-shadow: 5px 5px 0 var(--border-color);
+      box-shadow: 5px 5px 0 var(--window-border);
+      clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
     }
+    
     .start-btn:hover {
-      transform: translate(2px,2px);
-      box-shadow: 3px 3px 0 var(--border-color);
+      transform: translate(2px, 2px);
+      box-shadow: 3px 3px 0 var(--window-border);
+      background-color: var(--neon-green);
     }
+    
     .start-btn:active {
-      transform: translate(5px,5px);
+      transform: translate(5px, 5px);
       box-shadow: none;
     }
     
-    /* Form groups */
+    /* ======= FORM ELEMENTS ======= */
     .form-group {
       margin-bottom: 1.5rem;
     }
+    
     .form-label {
       display: block;
       font-family: var(--font-heading);
       font-weight: bold;
       text-transform: uppercase;
       margin-bottom: 0.5rem;
-      color: var(--text-primary);
+      color: var(--text);
       font-size: 0.9rem;
       letter-spacing: 0.05em;
     }
+    
     .form-input, .form-textarea {
       width: 100%;
       padding: 0.75rem;
-      background-color: var(--bg-window);
-      border: var(--border-width) solid var(--border-color);
-      border-radius: 4px;
-      font-family: var(--font-body);
+      background-color: var(--darker-bg);
+      border: var(--border-width) solid var(--neon-blue);
+      border-radius: 0;
+      font-family: var(--font-mono);
       font-size: 1rem;
-      color: var(--text-primary);
+      color: var(--text);
       transition: all var(--transition-speed);
+      clip-path: polygon(0 0, 100% 0, 98% 100%, 0 100%);
     }
+    
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--text-dim);
+    }
+    
     .form-input:focus, .form-textarea:focus {
       outline: none;
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 2px rgba(109, 138, 150, 0.3);
+      border-color: var(--neon-pink);
+      box-shadow: 0 0 10px rgba(255, 42, 109, 0.3);
     }
+    
     .form-textarea {
       min-height: 100px;
       resize: vertical;
     }
     
-    /* Layout */
+    /* ======= APP LAYOUT ======= */
     .app {
       width: 100%;
       height: 100%;
       position: relative;
     }
+    
     .start-screen {
       width: 100%;
       height: 100%;
@@ -192,7 +376,7 @@
       justify-content: center;
       align-items: center;
       padding: 2rem;
-      background-color: var(--bg-primary);
+      background-color: var(--dark-bg);
       transition: opacity var(--transition-speed), transform var(--transition-speed);
       position: absolute;
       top: 0; left: 0;
@@ -201,291 +385,322 @@
       transform: translateY(20px);
       pointer-events: none;
     }
+    
     .start-screen.active {
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
     }
+    
     .start-screen-content {
       max-width: 800px;
       width: 100%;
       text-align: center;
-      background-color: var(--bg-window);
+      background-color: var(--medium-bg);
       padding: 3rem;
-      border-radius: 10px;
-      border: var(--border-width) solid var(--border-color);
-      box-shadow: 8px 8px 0 var(--border-color);
+      border: var(--border-width) solid rgba(5, 217, 232, 0.2);
+      position: relative;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 20px) 0,
+        100% 20px,
+        100% 100%,
+        20px 100%,
+        0 calc(100% - 20px)
+      );
     }
+    
+    .start-screen-content::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-purple));
+      z-index: -1;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 25px) 0,
+        100% 25px,
+        100% 100%,
+        25px 100%,
+        0 calc(100% - 25px)
+      );
+      opacity: 0.5;
+    }
+    
     .logo {
+      font-family: var(--font-heading);
+      font-weight: 900;
       font-size: 3.5rem;
       margin-bottom: 1rem;
       transform: scale(1);
       transition: transform 0.3s;
+      text-transform: uppercase;
+      color: var(--text);
+      letter-spacing: 1px;
     }
+    
+    .logo span {
+      color: var(--neon-pink);
+    }
+    
     .logo:hover {
       transform: scale(1.05);
     }
+    
+    /* ======= SAVED REPORTS ======= */
     .saved-reports {
       margin-top: 3rem;
       text-align: left;
     }
+    
     .report-list {
       list-style: none;
       padding: 0;
       margin: 0;
-      background-color: var(--bg-secondary);
-      border: var(--border-width) solid var(--border-color);
-      border-radius: 5px;
+      background-color: var(--darker-bg);
+      border: var(--border-width) solid rgba(5, 217, 232, 0.2);
       max-height: 300px;
       overflow-y: auto;
     }
+    
     .report-item {
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid rgba(5, 217, 232, 0.2);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
       transition: background-color var(--transition-speed);
     }
+    
     .report-item:last-child {
       border-bottom: none;
     }
+    
     .report-item:hover {
-      background-color: rgba(0,0,0,0.05);
+      background-color: rgba(5, 217, 232, 0.05);
     }
+    
     .report-item-empty {
-      padding:1rem; text-align:center; color: var(--text-secondary);
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
     }
+    
     .report-item-info {
-      flex:1;
+      flex: 1;
     }
+    
     .report-item-address {
-      font-weight:bold; margin-bottom:0.25rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
     }
+    
     .report-item-date {
-      font-size:0.8rem; color: var(--text-secondary);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
     }
+    
     .report-item-actions {
-      display:flex; gap:0.5rem;
+      display: flex;
+      gap: 0.5rem;
     }
+    
     .report-item-btn {
-      background:none;
-      border:1px solid var(--border-color);
-      border-radius:4px;
-      width:28px; height:28px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer;
+      background: none;
+      border: 1px solid var(--window-border);
+      border-radius: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
       transition: all var(--transition-speed);
-      padding:0;
-      box-shadow:2px 2px 0 var(--border-color);
+      padding: 0;
+      box-shadow: 2px 2px 0 var(--window-border);
+      clip-path: none;
     }
+    
     .report-item-btn:hover {
-      transform:translate(1px,1px);
-      box-shadow:1px 1px 0 var(--border-color);
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--window-border);
     }
+    
     .report-item-btn.load-btn {
-      background-color: var(--accent-primary);
-      color:var(--bg-window);
+      background-color: var(--neon-blue);
+      color: var(--darker-bg);
     }
+    
     .report-item-btn.delete-btn {
-      background-color:var(--error);
-      color:var(--bg-window);
+      background-color: var(--error);
+      color: var(--darker-bg);
     }
-
+    
+    /* Form dropzone */
+    .dropzone {
+      border: 2px dashed var(--neon-blue);
+      padding: 2rem;
+      text-align: center;
+      background-color: rgba(5, 217, 232, 0.05);
+      transition: all var(--transition-speed);
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    
+    .dropzone:hover, .dropzone.active {
+      background-color: rgba(5, 217, 232, 0.1);
+      border-color: var(--neon-pink);
+    }
+    
+    .drag-over {
+      background-color: rgba(5, 217, 232, 0.2) !important;
+      border: 2px dashed var(--neon-pink) !important;
+    }
+    
+    /* ======= MAIN INTERFACE ======= */
     .main-interface {
-      width:100%; height:100%;
-      opacity:0; transform:scale(0.95);
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: scale(0.95);
       transition: opacity var(--transition-speed), transform var(--transition-speed);
-      position:absolute; top:0; left:0;
-      pointer-events:none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
     }
+    
     .main-interface.active {
-      opacity:1; transform:scale(1);
-      pointer-events:auto;
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
     }
+    
     .desktop {
-      width:100%; height:calc(100% - 40px);
-      position:relative; overflow:hidden;
-      /* Example placeholder for background image/pattern:
-         background-image: url("data:image/svg+xml,<svg>..."); */
+      width: 100%;
+      height: calc(100% - 40px);
+      position: relative;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(var(--neon-blue) 2px, transparent 2px),
+        linear-gradient(90deg, transparent 9px, var(--neon-blue) 10px, transparent 10px);
+      background-size: 40px 40px, 40px 2px;
+      background-position: center;
+      opacity: 0.05;
     }
+    
     .toolbar {
-      width:100%; height:40px; background-color:var(--window-header);
-      border-bottom: var(--border-width) solid var(--border-color);
-      display:flex; justify-content:space-between; align-items:center;
-      padding:0 1rem; color: var(--bg-window);
+      width: 100%;
+      height: 40px;
+      background-color: var(--window-header);
+      border-bottom: var(--border-width) solid var(--window-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1rem;
+      color: var(--darker-bg);
     }
+    
     .toolbar-title {
       font-family: var(--font-heading);
-      font-weight:bold; text-transform:uppercase; letter-spacing:0.05em;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
+    
     .toolbar-actions {
-      display:flex; gap:0.5rem;
+      display: flex;
+      gap: 0.5rem;
     }
+    
     .toolbar-btn {
-      background:none;
-      border:1px solid var(--border-color);
-      border-radius:4px; width:32px; height:32px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition: all var(--transition-speed);
-      padding:0;
-      box-shadow:2px 2px 0 var(--border-color);
-      color:var(--bg-window);
+      background: none;
+      border: 1px solid var(--window-border);
+      border-radius: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      padding: 0;
+      box-shadow: 2px 2px 0 var(--window-border);
+      color: var(--darker-bg);
+      clip-path: none;
     }
+    
     .toolbar-btn:hover {
-      transform:translate(1px,1px);
-      box-shadow:1px 1px 0 var(--border-color);
-      background-color:rgba(255,255,255,0.1);
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--window-border);
+      background-color: rgba(255, 255, 255, 0.1);
     }
-
+    
+    /* ======= SETTINGS PANEL ======= */
     .settings-panel {
-      position:absolute; top:40px; right:0; width:300px;
-      background-color: var(--bg-window);
-      border-left: var(--border-width) solid var(--border-color);
-      border-bottom: var(--border-width) solid var(--border-color);
-      border-bottom-left-radius:10px;
-      max-height:0; overflow:hidden; transition:max-height var(--transition-speed);
-      z-index:200; box-shadow:-4px 4px 0 var(--window-shadow);
+      position: absolute;
+      top: 40px;
+      right: 0;
+      width: 300px;
+      background-color: var(--medium-bg);
+      border-left: var(--border-width) solid var(--neon-blue);
+      border-bottom: var(--border-width) solid var(--neon-blue);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-speed);
+      z-index: 200;
+      box-shadow: -4px 4px 0 var(--window-shadow);
     }
+    
     .settings-panel.active {
-      max-height:600px;
+      max-height: 600px;
     }
+    
     .settings-header {
-      padding:1rem; border-bottom:1px solid var(--border-color);
-      display:flex; justify-content:space-between; align-items:center;
+      padding: 1rem;
+      border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    
     .settings-close {
-      background:none; border:none; cursor:pointer; font-size:1.2rem;
-      color:var(--text-secondary); transition: color var(--transition-speed);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      transition: color var(--transition-speed);
     }
+    
     .settings-close:hover {
-      color:var(--text-primary);
+      color: var(--neon-pink);
     }
+    
     .settings-section {
-      padding:1rem; border-bottom:1px solid var(--border-color);
+      padding: 1rem;
+      border-bottom: 1px solid rgba(5, 217, 232, 0.2);
     }
+    
     .settings-section:last-child {
-      border-bottom:none;
+      border-bottom: none;
     }
+    
     .settings-title {
-      margin-bottom:1rem;
-      font-family:var(--font-heading);
-      text-transform:uppercase; letter-spacing:0.05em;
+      margin-bottom: 1rem;
+      font-family: var(--font-heading);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-
-    /* Windows */
-    .window {
-      position:absolute;
-      background-color: var(--bg-window);
-      border: var(--border-width) solid var(--window-border);
-      border-radius: var(--window-radius);
-      box-shadow:6px 6px 0 var(--window-shadow);
-      min-width:300px; min-height:200px;
-      max-width:calc(100% - 20px);
-      max-height:calc(100% - 60px);
-      display:flex; flex-direction:column; overflow:hidden;
-      transition: transform 0.3s, opacity 0.3s;
-      user-select:none;
-    }
-    .window-header {
-      background-color:var(--window-header);
-      padding:0 1rem; height:35px;
-      display:flex; justify-content:space-between; align-items:center;
-      cursor:grab;
-      border-bottom: var(--border-width) solid var(--window-border);
-    }
-    .window-title {
-      color:var(--bg-window);
-      font-family: var(--font-heading); font-size:0.9rem; font-weight:bold;
-      text-transform:uppercase; letter-spacing:0.05em;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .window-controls {
-      display:flex; gap:8px;
-    }
-    .window-control {
-      width:15px; height:15px; border-radius:50%; cursor:pointer; position:relative;
-      border:1px solid var(--window-border);
-    }
-    .window-close { background-color:#ff5f56; }
-    .window-minimize { background-color:#ffbd2e; }
-    .window-maximize { background-color:#27c93f; }
-    .window-close:hover::after, .window-close:hover::before {
-      content:''; position:absolute; width:9px; height:1px; background-color:var(--window-border);
-      top:6px; left:2px;
-    }
-    .window-close:hover::after {
-      transform:rotate(45deg);
-    }
-    .window-close:hover::before {
-      transform:rotate(-45deg);
-    }
-    .window-minimize:hover::after {
-      content:'';
-      position:absolute; width:9px; height:1px; background-color:var(--window-border);
-      top:6px; left:2px;
-    }
-    .window-maximize:hover::after, .window-maximize:hover::before {
-      content:''; position:absolute; background-color:var(--window-border);
-    }
-    .window-maximize:hover::after {
-      width:7px; height:7px; border:1px solid var(--window-border);
-      top:2px; left:2px; background-color:transparent;
-    }
-    .window-content {
-      flex:1; padding:1.5rem; overflow-y:auto;
-    }
-    .window.active {
-      box-shadow:8px 8px 0 var(--window-shadow);
-    }
-    .window.minimized .window-content {
-      display:none;
-    }
-    .window.maximized {
-      width:100% !important;
-      height:calc(100% - 40px) !important;
-      top:0 !important; left:0 !important; border-radius:0;
-    }
-
-    /* Some animations & stuff */
-    .animate-pop {
-      animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes pop {
-      0% { transform:scale(0.9); opacity:0; }
-      100% { transform:scale(1); opacity:1; }
-    }
-    .animate-shake {
-      animation: shake 0.3s cubic-bezier(0.36,0.07,0.19,0.97);
-    }
-    @keyframes shake {
-      0%,100% { transform:translateX(0); }
-      25% { transform:translateX(-5px); }
-      50% { transform:translateX(5px); }
-      75% { transform:translateX(-5px); }
-    }
-
-    /* Font sizes */
-    .font-size-1 { font-size:14px; }
-    .font-size-2 { font-size:16px; }
-    .font-size-3 { font-size:18px; }
-
-    /* High Contrast */
-    .high-contrast {
-      --accent-primary:#0066cc;
-      --accent-secondary:#00994c;
-      --accent-tertiary:#cc6600;
-      --error:#cc0000;
-      --warning:#cc6600;
-      --success:#007744;
-      --text-primary:#000000;
-      --text-secondary:#333333;
-      --border-color:#000000;
-      --border-width:2px;
-    }
-
-    /* Minimal stub styles for .toggle, .toggle-switch, .drag-over, .canvas-tool */
+    
+    /* Toggle switches */
     .toggle {
       display: inline-block;
       position: relative;
@@ -494,44 +709,426 @@
       margin-bottom: 0.5rem;
       user-select: none;
       font-size: 0.9rem;
+      font-family: var(--font-mono);
     }
+    
     .toggle-switch {
       position: absolute;
-      left: 0; top: 0;
-      width: 40px; height: 20px;
-      background: #ccc;
-      border-radius: 10px;
+      left: 0;
+      top: 0;
+      width: 40px;
+      height: 20px;
+      background: var(--dark-bg);
+      border: 1px solid var(--text-dim);
       transition: 0.3s;
+      clip-path: polygon(0 0, 90% 0, 100% 100%, 10% 100%);
     }
+    
     .toggle.active .toggle-switch {
-      background: var(--accent-primary);
+      background: var(--neon-blue);
     }
-    .drag-over {
-      background-color: rgba(0, 0, 0, 0.1) !important;
-      border: 2px dashed var(--border-color) !important;
+    
+    /* Font size controls */
+    .font-size-controls {
+      display: flex;
+      gap: 0.5rem;
     }
+    
     .canvas-tool {
-      background-color: var(--accent-primary);
-      color: var(--bg-window);
-      border: var(--border-width) solid var(--border-color);
-      border-radius: 4px;
+      background-color: var(--neon-blue);
+      color: var(--darker-bg);
+      border: var(--border-width) solid var(--window-border);
+      border-radius: 0;
       padding: 0.5rem 1rem;
       cursor: pointer;
-      box-shadow: 2px 2px 0 var(--border-color);
+      box-shadow: 2px 2px 0 var(--window-border);
+      font-family: var(--font-mono);
+      clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
     }
+    
     .canvas-tool:hover {
       transform: translate(1px, 1px);
-      box-shadow: 1px 1px 0 var(--border-color);
+      box-shadow: 1px 1px 0 var(--window-border);
+      background-color: var(--neon-pink);
+    }
+    
+    /* ======= WINDOWS ======= */
+    .window {
+      position: absolute;
+      background-color: var(--medium-bg);
+      border: var(--border-width) solid var(--window-border);
+      box-shadow: 6px 6px 0 var(--window-shadow);
+      min-width: 300px;
+      min-height: 200px;
+      max-width: calc(100% - 20px);
+      max-height: calc(100% - 60px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.3s, opacity 0.3s;
+      user-select: none;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 20px) 0,
+        100% 20px,
+        100% 100%,
+        20px 100%,
+        0 calc(100% - 20px)
+      );
+    }
+    
+    .window::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-purple));
+      z-index: -1;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 25px) 0,
+        100% 25px,
+        100% 100%,
+        25px 100%,
+        0 calc(100% - 25px)
+      );
+      opacity: 0.5;
+    }
+    
+    .window-header {
+      background-color: var(--window-header);
+      padding: 0 1rem;
+      height: 35px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+      border-bottom: var(--border-width) solid var(--window-border);
+    }
+    
+    .window-title {
+      color: var(--darker-bg);
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .window-control {
+      width: 15px;
+      height: 15px;
+      border-radius: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+      cursor: pointer;
+      position: relative;
+      border: 1px solid var(--window-border);
+      transition: background-color 0.2s;
+    }
+    
+    .window-close {
+      background-color: var(--neon-pink);
+    }
+    
+    .window-minimize {
+      background-color: var(--neon-blue);
+    }
+    
+    .window-maximize {
+      background-color: var(--neon-green);
+    }
+    
+    .window-close:hover {
+      background-color: #ff5f56;
+    }
+    
+    .window-minimize:hover {
+      background-color: #00d7e6;
+    }
+    
+    .window-maximize:hover {
+      background-color: #44ff33;
+    }
+    
+    .window-content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+    
+    .window.active {
+      box-shadow: 8px 8px 0 var(--window-shadow);
+    }
+    
+    .window.minimized .window-content {
+      display: none;
+    }
+    
+    .window.maximized {
+      width: 100% !important;
+      height: calc(100% - 40px) !important;
+      top: 0 !important;
+      left: 0 !important;
+      clip-path: none;
+    }
+    
+    /* ======= ANIMATIONS ======= */
+    .animate-pop {
+      animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    @keyframes pop {
+      0% {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .animate-shake {
+      animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+    
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-5px);
+      }
+      50% {
+        transform: translateX(5px);
+      }
+      75% {
+        transform: translateX(-5px);
+      }
+    }
+    
+    /* ======= ROOM MANAGEMENT ======= */
+    .room-list {
+      list-style: none;
+      padding: 0;
+      background-color: var(--darker-bg);
+      border: var(--border-width) solid rgba(5, 217, 232, 0.2);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .room-item {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color var(--transition-speed);
+    }
+    
+    .room-item:last-child {
+      border-bottom: none;
+    }
+    
+    .room-item:hover {
+      background-color: rgba(5, 217, 232, 0.05);
+    }
+    
+    .room-item-empty {
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+    
+    .room-item.urgent {
+      border-left: 4px solid var(--error);
+    }
+    
+    .room-name {
+      font-weight: bold;
+    }
+    
+    .room-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .room-btn {
+      background: none;
+      border: 1px solid var(--window-border);
+      border-radius: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      padding: 0;
+      box-shadow: 2px 2px 0 var(--window-border);
+      clip-path: none;
+    }
+    
+    .room-btn:hover {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--window-border);
+    }
+    
+    .room-btn.edit-btn {
+      background-color: var(--neon-blue);
+      color: var(--darker-bg);
+    }
+    
+    .room-btn.delete-btn {
+      background-color: var(--error);
+      color: var(--darker-bg);
+    }
+    
+    /* Template palette */
+    .template-palette {
+      background-color: var(--darker-bg);
+      border: var(--border-width) solid rgba(5, 217, 232, 0.2);
+      padding: 1rem;
+    }
+    
+    .template-item {
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      background-color: rgba(5, 217, 232, 0.05);
+      border: 1px solid rgba(5, 217, 232, 0.2);
+      cursor: grab;
+      transition: all var(--transition-speed);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      position: relative;
+      clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+    }
+    
+    .template-item:hover {
+      background-color: rgba(5, 217, 232, 0.1);
+      transform: translateX(5px);
+    }
+    
+    /* ======= TERMINAL ANIMATION ======= */
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
     }
 
-    /* Responsive */
-    @media (max-width:768px) {
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: var(--neon-blue) }
+    }
+
+    .cyber-terminal {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-blue);
+      background: var(--darker-bg);
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid var(--neon-blue);
+      position: relative;
+    }
+
+    .cyber-terminal::before {
+      content: 'SYSTEM//';
+      position: absolute;
+      top: -10px;
+      left: 10px;
+      background: var(--darker-bg);
+      padding: 0 5px;
+      font-size: 10px;
+      color: var(--neon-blue);
+    }
+
+    .terminal-line {
+      display: flex;
+      margin-bottom: 4px;
+    }
+
+    .terminal-prompt {
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+
+    .terminal-text {
+      position: relative;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 0;
+      animation: 
+        typing 3.5s steps(40, end) forwards,
+        blink-caret .75s step-end infinite;
+      animation-delay: var(--delay, 0s);
+      border-right: .15em solid var(--neon-blue);
+    }
+
+    .terminal-text.line2 {
+      --delay: 3.5s;
+    }
+
+    .terminal-text.line3 {
+      --delay: 7s;
+    }
+    
+    /* ======= FONT SIZES ======= */
+    .font-size-1 {
+      font-size: 14px;
+    }
+    
+    .font-size-2 {
+      font-size: 16px;
+    }
+    
+    .font-size-3 {
+      font-size: 18px;
+    }
+    
+    /* ======= HIGH CONTRAST ======= */
+    .high-contrast {
+      --neon-blue: #0099FF;
+      --neon-pink: #FF0066;
+      --neon-purple: #CC00FF;
+      --neon-green: #00FF33;
+      --error: #FF0000;
+      --warning: #FF9900;
+      --success: #00CC33;
+      --text: #FFFFFF;
+      --text-dim: #AAAAAA;
+      --window-border: #000000;
+      --border-width: 2px;
+    }
+    
+    /* ======= RESPONSIVE STYLES ======= */
+    @media (max-width: 768px) {
       .start-screen-content {
-        padding:1.5rem;
+        padding: 1.5rem;
       }
-      h1 { font-size:2rem; }
-      .logo { font-size:2.5rem; }
-      .form-group { margin-bottom:1rem; }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .logo {
+        font-size: 2.5rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
     }
   </style>
 </head>
@@ -624,12 +1221,230 @@
       function renderStartScreen() {
         elements.startScreen.innerHTML = `
           <div class="start-screen-content animate-pop">
-            <div class="logo">🏠 InspectSpace</div>
-            <h1>Property Inspection Tool</h1>
-            <p>Streamline your property inspections with our intuitive, user-friendly tool.</p>
+            <div class="logo"><span>INSPECT</span>IONISER</div>
+            <h1 class="cyber-glitch-1">NEURAL PROPERTY ASSESSMENT</h1>
+            
+            <!-- Terminal Animation -->
+            <div class="cyber-terminal">
+              <div class="terminal-line">
+                <div class="terminal-prompt">></div>
+                <div class="terminal-text">Initializing inspection systems...</div>
+              </div>
+              <div class="terminal-line">
+                <div class="terminal-prompt">></div>
+                <div class="terminal-text line2">Neural networks online. Access granted.</div>
+              </div>
+              <div class="terminal-line">
+                <div class="terminal-prompt">></div>
+                <div class="terminal-text line3">Ready to process property data. Enter command:</div>
+              </div>
+            </div>
+          </div>
+        `;
+        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
+        state.windows.push(wId);
+        bringWindowToFront(wId);
+
+        document.querySelector(`#${wId} .window-close`).addEventListener('click',()=> closeWindow(wId));
+
+        // generate after short delay
+        setTimeout(()=>{
+          const el = document.getElementById('pdf-content');
+          const opt = {
+            margin: 10,
+            filename: `INSPECTIONISER_${(state.currentInspection.propertyAddress||'').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(el).save().then(()=>{
+            const tEl = document.querySelector(`#${wId} .window-title`);
+            if(tEl) tEl.textContent = 'PDF GENERATED';
+          });
+        }, 1000);
+      }
+
+      // ========== Return Home ==========
+      function returnToHome(){
+        closeAllWindows();
+        elements.mainInterface.classList.remove('active');
+        elements.startScreen.classList.add('active');
+        state.currentInspection = null;
+      }
+
+      // ========== Toggle Settings Panel ==========
+      function toggleSettingsPanel(){
+        elements.settingsPanel.classList.toggle('active');
+      }
+
+      function toggleDarkMode(){
+        state.darkMode = !state.darkMode;
+        document.getElementById('dark-mode-toggle').classList.toggle('active', state.darkMode);
+        if(state.darkMode){
+          document.body.setAttribute('data-theme','dark');
+        } else {
+          document.body.setAttribute('data-theme','light');
+        }
+        saveStateToLocal();
+      }
+
+      function toggleHighContrast(){
+        state.highContrast = !state.highContrast;
+        document.getElementById('high-contrast-toggle').classList.toggle('active', state.highContrast);
+        document.body.classList.toggle('high-contrast', state.highContrast);
+        saveStateToLocal();
+      }
+
+      function decreaseFontSize(){
+        if(state.fontSize > 1){
+          document.body.classList.remove(`font-size-${state.fontSize}`);
+          state.fontSize--;
+          document.body.classList.add(`font-size-${state.fontSize}`);
+          saveStateToLocal();
+        }
+      }
+      
+      function resetFontSize(){
+        document.body.classList.remove(`font-size-${state.fontSize}`);
+        state.fontSize = 2;
+        document.body.classList.add(`font-size-${state.fontSize}`);
+        saveStateToLocal();
+      }
+      
+      function increaseFontSize(){
+        if(state.fontSize < 3){
+          document.body.classList.remove(`font-size-${state.fontSize}`);
+          state.fontSize++;
+          document.body.classList.add(`font-size-${state.fontSize}`);
+          saveStateToLocal();
+        }
+      }
+
+      // ========== Window Management ==========
+      function closeAllWindows(){
+        [...state.windows].forEach(wId => closeWindow(wId));
+      }
+      
+      function closeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.add('animate-pop');
+        wEl.style.opacity = 0;
+        wEl.style.transform = 'scale(0.9)';
+        setTimeout(()=>{
+          wEl.remove();
+          const idx = state.windows.indexOf(wid);
+          if(idx !== -1) state.windows.splice(idx, 1);
+        }, 300);
+      }
+      
+      function minimizeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.toggle('minimized');
+        if(wEl.classList.contains('minimized')){
+          wEl.setAttribute('data-prev-height', wEl.style.height || 'auto');
+          wEl.setAttribute('data-prev-width', wEl.style.width || 'auto');
+          wEl.setAttribute('data-prev-top', wEl.style.top || '0');
+          wEl.setAttribute('data-prev-left', wEl.style.left || '0');
+          wEl.style.height = '40px';
+          wEl.style.width = '200px';
+          wEl.style.top = 'calc(100% - 50px)';
+          const offset = state.windows.indexOf(wid) * 210;
+          wEl.style.left = `${offset}px`;
+          const content = wEl.querySelector('.window-content');
+          if(content) content.style.display = 'none';
+        } else {
+          wEl.style.height = wEl.getAttribute('data-prev-height');
+          wEl.style.width = wEl.getAttribute('data-prev-width');
+          wEl.style.top = wEl.getAttribute('data-prev-top');
+          wEl.style.left = wEl.getAttribute('data-prev-left');
+          const content = wEl.querySelector('.window-content');
+          if(content) content.style.display = 'block';
+        }
+      }
+      
+      function maximizeWindow(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        wEl.classList.toggle('maximized');
+        if(wEl.classList.contains('maximized')){
+          wEl.setAttribute('data-prev-height', wEl.style.height || 'auto');
+          wEl.setAttribute('data-prev-width', wEl.style.width || 'auto');
+          wEl.setAttribute('data-prev-top', wEl.style.top || '0');
+          wEl.setAttribute('data-prev-left', wEl.style.left || '0');
+          wEl.style.height = 'calc(100% - 50px)';
+          wEl.style.width = '100%';
+          wEl.style.top = '0';
+          wEl.style.left = '0';
+        } else {
+          wEl.style.height = wEl.getAttribute('data-prev-height');
+          wEl.style.width = wEl.getAttribute('data-prev-width');
+          wEl.style.top = wEl.getAttribute('data-prev-top');
+          wEl.style.left = wEl.getAttribute('data-prev-left');
+        }
+      }
+      
+      function bringWindowToFront(wid){
+        const wEl = document.getElementById(wid);
+        if(!wEl) return;
+        state.zIndex++;
+        wEl.style.zIndex = state.zIndex;
+        state.windows.forEach(id => {
+          const we = document.getElementById(id);
+          if(we) we.classList.remove('active');
+        });
+        wEl.classList.add('active');
+      }
+
+      // Draggable logic
+      function dragMoveListener(e){
+        const tgt = e.target;
+        const x = (parseFloat(tgt.getAttribute('data-x')) || 0) + e.dx;
+        const y = (parseFloat(tgt.getAttribute('data-y')) || 0) + e.dy;
+        tgt.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+        tgt.setAttribute('data-x', x);
+        tgt.setAttribute('data-y', y);
+      }
+      
+      function dragStartListener(e){
+        bringWindowToFront(e.target.id);
+      }
+
+      // Random ID generator
+      function generateId(){
+        return '_' + Math.random().toString(36).substr(2, 9);
+      }
+
+      // Add random glitch effect to elements periodically
+      function randomGlitch() {
+        const elements = Array.from(document.querySelectorAll('.window-title, .logo'));
+        const randomElement = elements[Math.floor(Math.random() * elements.length)];
+        
+        if (randomElement) {
+          randomElement.classList.add('cyber-glitch-1');
+          
+          setTimeout(() => {
+            randomElement.classList.remove('cyber-glitch-1');
+          }, 2000);
+        }
+        
+        setTimeout(randomGlitch, Math.random() * 5000 + 3000);
+      }
+      
+      // Initialize glitch effects
+      setTimeout(randomGlitch, 5000);
+
+      init();
+    });
+  </script>
+</body>
+</html>
+            
+            <p class="cyber-glitch-2">Advanced neural property assessment system for efficient inspections, documentation and analysis.</p>
             
             <div class="form-group" style="margin:2rem 0;">
-              <label class="form-label">Or drag and drop an inspection form file:</label>
+              <label class="form-label">OR DRAG AND DROP AN INSPECTION FORM FILE:</label>
               <div id="form-dropzone" class="dropzone">
                 <i class="fas fa-file-import" style="font-size:2rem; margin-bottom:10px;"></i>
                 <p>Drag and drop your .docx or .txt form here</p>
@@ -638,17 +1453,17 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Paste multiple properties (one per line):</label>
+              <label class="form-label">PASTE MULTIPLE PROPERTIES (ONE PER LINE):</label>
               <textarea id="multi-property-text" class="form-textarea" placeholder="Property #1&#10;Property #2&#10;..."></textarea>
-              <button id="create-multi-inspections-btn" class="start-btn">Create Inspections</button>
+              <button id="create-multi-inspections-btn" class="start-btn">CREATE INSPECTIONS</button>
             </div>
 
             <button id="start-inspection-btn" class="start-btn" style="margin-top:1rem;">
-              <i class="fas fa-clipboard-check"></i> Begin New Inspection
+              <i class="fas fa-clipboard-check"></i> BEGIN NEW INSPECTION
             </button>
 
             <div class="saved-reports" style="margin-top:2rem;">
-              <h3>Saved Inspections</h3>
+              <h3>SAVED INSPECTIONS</h3>
               <ul class="report-list" id="saved-reports-list">
                 ${renderSavedReportsList()}
               </ul>
@@ -659,7 +1474,7 @@
 
       function renderSavedReportsList(){
         if (!state.savedInspections.length) {
-          return '<li class="report-item-empty">No saved inspections found.</li>';
+          return '<li class="report-item-empty">NO SAVED INSPECTIONS FOUND.</li>';
         }
         return state.savedInspections.map(insp => `
           <li class="report-item" data-id="${insp.id}">
@@ -678,7 +1493,7 @@
       // ===== Toolbar =====
       function renderToolbar() {
         elements.toolbar.innerHTML = `
-          <div class="toolbar-title">InspectSpace</div>
+          <div class="toolbar-title">INSPECTIONISER</div>
           <div class="toolbar-actions">
             <button id="new-inspection-btn" class="toolbar-btn" title="New Inspection"><i class="fas fa-plus"></i></button>
             <button id="save-inspection-btn" class="toolbar-btn" title="Save Inspection"><i class="fas fa-save"></i></button>
@@ -693,37 +1508,37 @@
       function renderSettingsPanel() {
         elements.settingsPanel.innerHTML = `
           <div class="settings-header">
-            <h3>Settings</h3>
+            <h3>SETTINGS</h3>
             <button id="settings-close-btn" class="settings-close"><i class="fas fa-times"></i></button>
           </div>
           <div class="settings-section">
-            <h4 class="settings-title">Appearance</h4>
+            <h4 class="settings-title">APPEARANCE</h4>
             <div class="form-group">
               <label class="toggle ${state.darkMode?'active':''}" id="dark-mode-toggle">
                 <span class="toggle-switch"></span>
-                Dark Mode
+                DARK MODE
               </label>
             </div>
             <div class="form-group">
               <label class="toggle ${state.highContrast?'active':''}" id="high-contrast-toggle">
                 <span class="toggle-switch"></span>
-                High Contrast
+                HIGH CONTRAST
               </label>
             </div>
             <div class="form-group">
-              <label class="form-label">Font Size</label>
+              <label class="form-label">FONT SIZE</label>
               <div class="font-size-controls">
                 <button id="font-size-decrease" class="canvas-tool">A-</button>
-                <button id="font-size-reset" class="canvas-tool">Reset</button>
+                <button id="font-size-reset" class="canvas-tool">RESET</button>
                 <button id="font-size-increase" class="canvas-tool">A+</button>
               </div>
             </div>
           </div>
           <div class="settings-section">
-            <h4 class="settings-title">About</h4>
-            <p>InspectSpace v1.0</p>
-            <p>A property inspection tool for letting agents.</p>
-            <p>© 2025 InspectSpace</p>
+            <h4 class="settings-title">ABOUT</h4>
+            <p>INSPECTIONISER v2.4</p>
+            <p>Neural property inspection system for advanced analytics.</p>
+            <p>© 2025 PROP//TOOLBOX</p>
           </div>
         `;
       }
@@ -903,7 +1718,7 @@
         const wHtml = `
           <div id="${wId}" class="window" style="top:50px; left:50px; width:500px;">
             <div class="window-header">
-              <div class="window-title">Property Details</div>
+              <div class="window-title">PROPERTY DETAILS</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
                 <div class="window-control window-minimize" data-window="${wId}"></div>
@@ -913,22 +1728,22 @@
             <div class="window-content">
               <form id="property-form">
                 <div class="form-group">
-                  <label class="form-label">Property Address</label>
+                  <label class="form-label">PROPERTY ADDRESS</label>
                   <input type="text" id="prop-address" class="form-input" required value="${state.currentInspection.propertyAddress}">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Inspection Date</label>
+                  <label class="form-label">INSPECTION DATE</label>
                   <input type="date" id="prop-date" class="form-input" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Agent Name</label>
+                  <label class="form-label">AGENT NAME</label>
                   <input type="text" id="agent-name" class="form-input" required value="${state.currentInspection.agentName}">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Tenant Name</label>
+                  <label class="form-label">TENANT NAME</label>
                   <input type="text" id="tenant-name" class="form-input" required value="${state.currentInspection.tenantName}">
                 </div>
-                <button type="submit" class="start-btn">Continue to Inspection</button>
+                <button type="submit" class="start-btn">CONTINUE TO INSPECTION</button>
               </form>
             </div>
           </div>
@@ -972,7 +1787,7 @@
         const wHtml = `
           <div id="${wId}" class="window" style="top:80px; left:80px; width:700px;">
             <div class="window-header">
-              <div class="window-title">Rooms Management</div>
+              <div class="window-title">ROOMS MANAGEMENT</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
                 <div class="window-control window-minimize" data-window="${wId}"></div>
@@ -980,7 +1795,7 @@
               </div>
             </div>
             <div class="window-content">
-              <h3>Property: ${state.currentInspection.propertyAddress}</h3>
+              <h3>PROPERTY: ${state.currentInspection.propertyAddress}</h3>
               <p>Drag a template from the right or manually add new rooms. Click a room to open its inspection window.</p>
               
               <div style="display:flex; gap:1rem; flex-wrap:wrap;">
@@ -988,7 +1803,7 @@
                   ${renderRoomsList()}
                 </ul>
                 <div class="template-palette" id="template-palette" style="width:200px; min-width:200px;">
-                  <h4 style="margin-bottom:0.5rem;">Room Templates</h4>
+                  <h4 style="margin-bottom:0.5rem;">ROOM TEMPLATES</h4>
                   ${state.defaultRoomTemplates.map((tpl,idx)=>`
                     <div class="template-item" data-tid="${idx}" draggable="true">
                       ${tpl.name}
@@ -998,15 +1813,15 @@
               </div>
 
               <div class="form-group" style="margin-top:1rem;">
-                <label class="form-label" for="new-room-name">Add New Room</label>
+                <label class="form-label" for="new-room-name">ADD NEW ROOM</label>
                 <div style="display:flex; gap:10px;">
                   <input type="text" id="new-room-name" class="form-input" placeholder="e.g. Kitchen, Bedroom 1">
-                  <button id="add-room-btn" class="start-btn"><i class="fas fa-plus"></i> Add</button>
+                  <button id="add-room-btn" class="start-btn"><i class="fas fa-plus"></i> ADD</button>
                 </div>
               </div>
 
               <div class="form-group" style="margin-top:20px;">
-                <button id="signatures-btn" class="start-btn">Proceed to Signatures</button>
+                <button id="signatures-btn" class="start-btn">PROCEED TO SIGNATURES</button>
               </div>
             </div>
           </div>
@@ -1054,7 +1869,7 @@
 
       function renderRoomsList(){
         if(!state.currentInspection.rooms.length){
-          return `<li class="room-item-empty">No rooms added yet.</li>`;
+          return `<li class="room-item-empty">NO ROOMS ADDED YET.</li>`;
         }
         return state.currentInspection.rooms.map(r=>`
           <li class="room-item ${r.urgent?'urgent':''}" data-id="${r.id}">
@@ -1146,7 +1961,7 @@
         const wHtml = `
           <div id="${wId}" class="window" style="top:100px; left:200px; width:650px;">
             <div class="window-header">
-              <div class="window-title">Room Inspection: ${room.name}</div>
+              <div class="window-title">ROOM INSPECTION: ${room.name}</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
                 <div class="window-control window-minimize" data-window="${wId}"></div>
@@ -1155,20 +1970,20 @@
             </div>
             <div class="window-content">
               <div class="form-group">
-                <label class="form-label">Condition Rating (1-10)</label>
+                <label class="form-label">CONDITION RATING (1-10)</label>
                 <div style="display:flex; align-items:center; gap:1rem;">
                   <input type="range" id="condition-slider-${rid}" min="1" max="10" value="${room.condition}" style="flex:1;">
-                  <div id="condition-value-${rid}" style="font-weight:bold; min-width:40px;">${room.condition}/10</div>
+                  <div id="condition-value-${rid}" style="font-weight:bold; min-width:40px; font-family:var(--font-mono);">${room.condition}/10</div>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Notes</label>
+                <label class="form-label">NOTES</label>
                 <textarea id="room-notes-${rid}" class="form-textarea">${room.notes}</textarea>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Photos</label>
+                <label class="form-label">PHOTOS</label>
                 <div class="dropzone" id="photo-dropzone-${rid}">
                   <i class="fas fa-cloud-upload-alt" style="font-size:2rem; margin-bottom:10px;"></i>
                   <p>Drag and drop photos here or click to select files</p>
@@ -1182,11 +1997,11 @@
               <div class="form-group">
                 <label class="toggle ${room.urgent?'active':''}" id="urgent-toggle-${rid}">
                   <span class="toggle-switch"></span>
-                  Mark as Urgent Issue
+                  MARK AS URGENT ISSUE
                 </label>
               </div>
 
-              <button id="save-room-btn-${rid}" class="start-btn">Save Room Inspection</button>
+              <button id="save-room-btn-${rid}" class="start-btn">SAVE ROOM INSPECTION</button>
             </div>
           </div>
         `;
@@ -1271,17 +2086,17 @@
 
       function renderPhotoPreviews(photos, rid){
         if(!photos.length){
-          return `<p>No photos yet.</p>`;
+          return `<p class="text-dim" style="font-family:var(--font-mono);">NO PHOTOS YET.</p>`;
         }
         return `
           <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:1rem;">
             ${photos.map(photo=>`
-              <div style="position:relative; border:2px solid var(--border-color); border-radius:5px; overflow:hidden; aspect-ratio:1;">
+              <div style="position:relative; border:2px solid var(--neon-blue); overflow:hidden; aspect-ratio:1; clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);">
                 <img src="${photo.data}" alt="${photo.name}" style="width:100%; height:100%; object-fit:cover;">
                 <button class="photo-delete-btn" data-id="${photo.id}" style="
-                  position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
-                  background-color:rgba(0,0,0,0.5); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
-                  cursor:pointer; transition:all 0.2s; padding:0;
+                  position:absolute; top:5px; right:5px; width:24px; height:24px;
+                  background-color:var(--error); color:var(--darker-bg); border:none; display:flex; align-items:center; justify-content:center;
+                  cursor:pointer; transition:all 0.2s; padding:0; clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
                 "><i class="fas fa-times"></i></button>
               </div>
             `).join('')}
@@ -1312,7 +2127,7 @@
         const wHtml=`
           <div id="${wId}" class="window" style="top:120px; left:150px; width:700px;">
             <div class="window-header">
-              <div class="window-title">Signatures</div>
+              <div class="window-title">SIGNATURES</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
                 <div class="window-control window-minimize" data-window="${wId}"></div>
@@ -1320,28 +2135,28 @@
               </div>
             </div>
             <div class="window-content">
-              <h3>Property: ${state.currentInspection.propertyAddress}</h3>
+              <h3>PROPERTY: ${state.currentInspection.propertyAddress}</h3>
               <p>Please sign below to confirm the inspection details.</p>
 
               <div class="form-group">
-                <label class="form-label">Tenant Signature</label>
-                <canvas id="tenant-signature" width="600" height="150" style="border:1px solid var(--border-color); border-radius:5px; background:#fff; cursor:crosshair;"></canvas>
+                <label class="form-label">TENANT SIGNATURE</label>
+                <canvas id="tenant-signature" width="600" height="150" style="border:1px solid var(--neon-blue); background:var(--darker-bg); cursor:crosshair;"></canvas>
                 <div style="display:flex; gap:0.5rem; margin-top:0.5rem; justify-content:flex-end;">
-                  <button id="tenant-clear-btn" class="canvas-tool">Clear</button>
+                  <button id="tenant-clear-btn" class="canvas-tool">CLEAR</button>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Agent Signature</label>
-                <canvas id="agent-signature" width="600" height="150" style="border:1px solid var(--border-color); border-radius:5px; background:#fff; cursor:crosshair;"></canvas>
+                <label class="form-label">AGENT SIGNATURE</label>
+                <canvas id="agent-signature" width="600" height="150" style="border:1px solid var(--neon-blue); background:var(--darker-bg); cursor:crosshair;"></canvas>
                 <div style="display:flex; gap:0.5rem; margin-top:0.5rem; justify-content:flex-end;">
-                  <button id="agent-clear-btn" class="canvas-tool">Clear</button>
+                  <button id="agent-clear-btn" class="canvas-tool">CLEAR</button>
                 </div>
               </div>
 
               <div class="form-group" style="margin-top:1rem;">
-                <button id="complete-inspection-btn" class="start-btn">Complete Inspection</button>
-                <button id="skip-signatures-btn" class="start-btn" style="background:#ccc; color:#333;">Skip Signatures</button>
+                <button id="complete-inspection-btn" class="start-btn">COMPLETE INSPECTION</button>
+                <button id="skip-signatures-btn" class="start-btn" style="background:var(--text-dim); color:var(--darker-bg);">SKIP SIGNATURES</button>
               </div>
             </div>
           </div>
@@ -1372,7 +2187,7 @@
         const ctx = c.getContext('2d');
         let drawing=false; let lastX=0; let lastY=0;
 
-        ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth=2; ctx.strokeStyle='#000';
+        ctx.lineJoin='round'; ctx.lineCap='round'; ctx.lineWidth=2; ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--neon-blue');
 
         c.addEventListener('mousedown', startDraw);
         c.addEventListener('mousemove', draw);
@@ -1437,9 +2252,9 @@
       function createSummaryWindow(){
         const wId= `window-summary-${state.nextWindowId++}`;
         const wHtml=`
-          <div id="${wId}" class="window" style="top:50px; left:100px; width:700px;">
+          <div id="${wId}" class="window cyber-panel" style="top:50px; left:100px; width:700px;">
             <div class="window-header">
-              <div class="window-title">Inspection Summary</div>
+              <div class="window-title">INSPECTION SUMMARY</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
                 <div class="window-control window-minimize" data-window="${wId}"></div>
@@ -1447,21 +2262,36 @@
               </div>
             </div>
             <div class="window-content">
-              <h2>Inspection Completed!</h2>
-              <p>Property: ${state.currentInspection.propertyAddress}</p>
-              <p>Date: ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
-              <p>Agent: ${state.currentInspection.agentName}</p>
-              <p>Tenant: ${state.currentInspection.tenantName}</p>
+              <h2 class="cyber-glitch-1">INSPECTION COMPLETED!</h2>
+              <p>PROPERTY: ${state.currentInspection.propertyAddress}</p>
+              <p>DATE: ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
+              <p>AGENT: ${state.currentInspection.agentName}</p>
+              <p>TENANT: ${state.currentInspection.tenantName}</p>
               
-              <h3>Rooms Inspected: ${state.currentInspection.rooms.length}</h3>
-              <ul style="list-style:none; padding:0; margin:1rem 0; background:var(--bg-secondary); border:var(--border-width) solid var(--border-color); border-radius:5px; max-height:300px; overflow-y:auto;">
+              <div class="cyber-terminal" style="margin:20px 0;">
+                <div class="terminal-line">
+                  <div class="terminal-prompt">></div>
+                  <div class="terminal-text">Report generation complete. Inspection data analyzed.</div>
+                </div>
+                <div class="terminal-line">
+                  <div class="terminal-prompt">></div>
+                  <div class="terminal-text line2">Rooms inspected: ${state.currentInspection.rooms.length}</div>
+                </div>
+                <div class="terminal-line">
+                  <div class="terminal-prompt">></div>
+                  <div class="terminal-text line3">Processing signatures and finalizing report...</div>
+                </div>
+              </div>
+              
+              <h3>ROOMS INSPECTED: ${state.currentInspection.rooms.length}</h3>
+              <ul style="list-style:none; padding:0; margin:1rem 0; background:var(--darker-bg); border:var(--border-width) solid var(--neon-blue); max-height:300px; overflow-y:auto;">
                 ${
                   state.currentInspection.rooms.map(r=>`
-                    <li style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <li style="padding:0.75rem 1rem; border-bottom:1px solid rgba(5, 217, 232, 0.2); display:flex; justify-content:space-between; align-items:center;">
                       <strong>${r.name}</strong> - Condition: ${r.condition}/10
                       ${
                         r.urgent
-                          ? `<span style="background:var(--error); color:#fff; padding:0.25rem 0.5rem; border-radius:3px; font-size:0.8rem;">URGENT</span>`
+                          ? `<span style="background:var(--error); color:var(--darker-bg); padding:0.25rem 0.5rem; font-size:0.8rem; font-family:var(--font-mono);">URGENT</span>`
                           : ''
                       }
                     </li>
@@ -1470,31 +2300,31 @@
               </ul>
 
               <div style="margin-bottom:30px;">
-                <h3>Signatures</h3>
+                <h3>SIGNATURES</h3>
                 <div style="display:flex; flex-wrap:wrap; gap:20px;">
                   <div style="flex:1; min-width:300px;">
-                    <p><strong>Tenant Signature:</strong></p>
+                    <p><strong>TENANT SIGNATURE:</strong></p>
                     ${
                       state.currentInspection.tenantSignature
-                        ? `<img src="${state.currentInspection.tenantSignature}" alt="Tenant Signature" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
-                        : `<p>No signature provided.</p>`
+                        ? `<img src="${state.currentInspection.tenantSignature}" alt="Tenant Signature" style="max-width:100%; border:1px solid var(--neon-blue);">`
+                        : `<p style="font-family:var(--font-mono); color:var(--text-dim);">NO SIGNATURE PROVIDED.</p>`
                     }
                   </div>
                   <div style="flex:1; min-width:300px;">
-                    <p><strong>Agent Signature:</strong></p>
+                    <p><strong>AGENT SIGNATURE:</strong></p>
                     ${
                       state.currentInspection.agentSignature
-                        ? `<img src="${state.currentInspection.agentSignature}" alt="Agent Signature" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
-                        : `<p>No signature provided.</p>`
+                        ? `<img src="${state.currentInspection.agentSignature}" alt="Agent Signature" style="max-width:100%; border:1px solid var(--neon-blue);">`
+                        : `<p style="font-family:var(--font-mono); color:var(--text-dim);">NO SIGNATURE PROVIDED.</p>`
                     }
                   </div>
                 </div>
               </div>
 
               <div style="margin-top:20px; display:flex; gap:10px;">
-                <button id="export-pdf-summary-btn" class="start-btn"><i class="fas fa-file-pdf"></i> Export PDF</button>
-                <button id="generate-qr-btn" class="start-btn"><i class="fas fa-qrcode"></i> Generate QR Code</button>
-                <button id="return-home-btn" class="start-btn"><i class="fas fa-home"></i> Return to Home</button>
+                <button id="export-pdf-summary-btn" class="start-btn"><i class="fas fa-file-pdf"></i> EXPORT PDF</button>
+                <button id="generate-qr-btn" class="start-btn"><i class="fas fa-qrcode"></i> GENERATE QR CODE</button>
+                <button id="return-home-btn" class="start-btn"><i class="fas fa-home"></i> RETURN TO HOME</button>
               </div>
               
               <div id="qrcode-container" style="margin-top:20px; text-align:center; display:none;"></div>
@@ -1575,243 +2405,69 @@
         const wHtml=`
           <div id="${wId}" class="window" style="top:50px; left:50px; width:800px; height:600px;">
             <div class="window-header">
-              <div class="window-title">Generating PDF...</div>
+              <div class="window-title">GENERATING PDF...</div>
               <div class="window-controls">
                 <div class="window-control window-close" data-window="${wId}"></div>
               </div>
             </div>
             <div class="window-content">
-              <div id="pdf-content" style="padding:20px; background-color:white;">
+              <div id="pdf-content" style="padding:20px; background-color:white; color:#000;">
                 <div style="text-align:center; margin-bottom:20px;">
-                  <h1 style="color:#3b82f6;">InspectSpace</h1>
-                  <h2>Property Inspection Report</h2>
+                  <h1 style="color:#FF2A6D; font-family:'Orbitron', sans-serif;">INSPECTIONISER</h1>
+                  <h2 style="font-family:'Orbitron', sans-serif;">PROPERTY INSPECTION REPORT</h2>
                 </div>
                 <div style="margin-bottom:30px;">
-                  <h3>Property Details</h3>
-                  <p><strong>Address:</strong> ${state.currentInspection.propertyAddress}</p>
-                  <p><strong>Inspection Date:</strong> ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
-                  <p><strong>Agent:</strong> ${state.currentInspection.agentName}</p>
-                  <p><strong>Tenant:</strong> ${state.currentInspection.tenantName}</p>
+                  <h3 style="font-family:'Orbitron', sans-serif; border-left:5px solid #05D9E8; padding-left:10px;">PROPERTY DETAILS</h3>
+                  <p><strong>ADDRESS:</strong> ${state.currentInspection.propertyAddress}</p>
+                  <p><strong>INSPECTION DATE:</strong> ${new Date(state.currentInspection.date).toLocaleDateString()}</p>
+                  <p><strong>AGENT:</strong> ${state.currentInspection.agentName}</p>
+                  <p><strong>TENANT:</strong> ${state.currentInspection.tenantName}</p>
                 </div>
                 <div style="margin-bottom:30px;">
-                  <h3>Room Inspections</h3>
+                  <h3 style="font-family:'Orbitron', sans-serif; border-left:5px solid #05D9E8; padding-left:10px;">ROOM INSPECTIONS</h3>
                   ${
                     state.currentInspection.rooms.map(r=>`
-                      <div style="margin-bottom:20px; padding:10px; border:1px solid #d1d5db; border-radius:5px; ${r.urgent?'border-left:5px solid #ef4444;':''}">
-                        <h4>${r.name} ${r.urgent?'<span style="color:#ef4444;">(URGENT)</span>':''}</h4>
-                        <p><strong>Condition:</strong> ${r.condition}/10</p>
-                        <p><strong>Notes:</strong> ${r.notes||'No notes.'}</p>
+                      <div style="margin-bottom:20px; padding:10px; border:1px solid #d1d5db; ${r.urgent?'border-left:5px solid #FF2A6D;':''}">
+                        <h4 style="font-family:'Orbitron', sans-serif;">${r.name} ${r.urgent?'<span style="color:#FF2A6D;">(URGENT)</span>':''}</h4>
+                        <p><strong>CONDITION:</strong> ${r.condition}/10</p>
+                        <p><strong>NOTES:</strong> ${r.notes||'No notes.'}</p>
                         ${
                           r.photos.length
-                            ? `<div><p><strong>Photos:</strong></p>
+                            ? `<div><p><strong>PHOTOS:</strong></p>
                                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
-                                  ${r.photos.map(p=>`<img src="${p.data}" alt="${p.name}" style="max-width:200px; max-height:150px; border-radius:5px;">`).join('')}
+                                  ${r.photos.map(p=>`<img src="${p.data}" alt="${p.name}" style="max-width:200px; max-height:150px;">`).join('')}
                                 </div>
                               </div>`
-                            : `<p><strong>Photos:</strong> No photos provided.</p>`
+                            : `<p><strong>PHOTOS:</strong> No photos provided.</p>`
                         }
                       </div>
                     `).join('')
                   }
                 </div>
                 <div style="margin-bottom:30px;">
-                  <h3>Signatures</h3>
+                  <h3 style="font-family:'Orbitron', sans-serif; border-left:5px solid #05D9E8; padding-left:10px;">SIGNATURES</h3>
                   <div style="display:flex; flex-wrap:wrap; gap:20px;">
                     <div style="flex:1; min-width:300px;">
-                      <p><strong>Tenant Signature:</strong></p>
+                      <p><strong>TENANT SIGNATURE:</strong></p>
                       ${
                         state.currentInspection.tenantSignature
-                          ? `<img src="${state.currentInspection.tenantSignature}" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                          ? `<img src="${state.currentInspection.tenantSignature}" style="max-width:100%; border:1px solid #d1d5db;">`
                           : `<p>No signature provided.</p>`
                       }
                     </div>
                     <div style="flex:1; min-width:300px;">
-                      <p><strong>Agent Signature:</strong></p>
+                      <p><strong>AGENT SIGNATURE:</strong></p>
                       ${
                         state.currentInspection.agentSignature
-                          ? `<img src="${state.currentInspection.agentSignature}" style="max-width:100%; border:1px solid #d1d5db; border-radius:5px;">`
+                          ? `<img src="${state.currentInspection.agentSignature}" style="max-width:100%; border:1px solid #d1d5db;">`
                           : `<p>No signature provided.</p>`
                       }
                     </div>
                   </div>
                 </div>
-                <div style="text-align:center; margin-top:50px; color:#6b7280; font-size:0.8rem;">
-                  <p>Generated by InspectSpace - ${new Date().toLocaleDateString()}</p>
+                <div style="text-align:center; margin-top:50px; font-size:0.8rem;">
+                  <p>Generated by INSPECTIONISER - ${new Date().toLocaleDateString()}</p>
+                  <p style="font-family:'Share Tech Mono', monospace; margin-top:5px; color:#6B7A99; font-size:10px;">/* NEURAL PROPERTY ANALYSIS COMPLETE */</p>
                 </div>
               </div>
             </div>
-          </div>
-        `;
-        elements.desktop.insertAdjacentHTML('beforeend', wHtml);
-        state.windows.push(wId);
-        bringWindowToFront(wId);
-
-        document.querySelector(`#${wId} .window-close`).addEventListener('click',()=> closeWindow(wId));
-
-        // generate after short delay
-        setTimeout(()=>{
-          const el = document.getElementById('pdf-content');
-          const opt = {
-            margin:10,
-            filename: `InspectSpace_${(state.currentInspection.propertyAddress||'').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-            image:{ type:'jpeg', quality:0.98},
-            html2canvas:{ scale:2},
-            jsPDF:{ unit:'mm', format:'a4', orientation:'portrait'}
-          };
-          html2pdf().set(opt).from(el).save().then(()=>{
-            const tEl = document.querySelector(`#${wId} .window-title`);
-            if(tEl) tEl.textContent = 'PDF Generated';
-          });
-        },1000);
-      }
-
-      // ========== Return Home ==========
-      function returnToHome(){
-        closeAllWindows();
-        elements.mainInterface.classList.remove('active');
-        elements.startScreen.classList.add('active');
-        state.currentInspection=null;
-      }
-
-      // ========== Toggle Settings Panel ==========
-      function toggleSettingsPanel(){
-        elements.settingsPanel.classList.toggle('active');
-      }
-
-      function toggleDarkMode(){
-        state.darkMode=!state.darkMode;
-        document.getElementById('dark-mode-toggle').classList.toggle('active', state.darkMode);
-        if(state.darkMode){
-          document.body.setAttribute('data-theme','dark');
-        } else {
-          document.body.setAttribute('data-theme','light');
-        }
-        saveStateToLocal();
-      }
-
-      function toggleHighContrast(){
-        state.highContrast=!state.highContrast;
-        document.getElementById('high-contrast-toggle').classList.toggle('active', state.highContrast);
-        document.body.classList.toggle('high-contrast', state.highContrast);
-        saveStateToLocal();
-      }
-
-      function decreaseFontSize(){
-        if(state.fontSize>1){
-          document.body.classList.remove(`font-size-${state.fontSize}`);
-          state.fontSize--;
-          document.body.classList.add(`font-size-${state.fontSize}`);
-          saveStateToLocal();
-        }
-      }
-      function resetFontSize(){
-        document.body.classList.remove(`font-size-${state.fontSize}`);
-        state.fontSize=2;
-        document.body.classList.add(`font-size-${state.fontSize}`);
-        saveStateToLocal();
-      }
-      function increaseFontSize(){
-        if(state.fontSize<3){
-          document.body.classList.remove(`font-size-${state.fontSize}`);
-          state.fontSize++;
-          document.body.classList.add(`font-size-${state.fontSize}`);
-          saveStateToLocal();
-        }
-      }
-
-      // ========== Window Management ==========
-      function closeAllWindows(){
-        [...state.windows].forEach(wId=> closeWindow(wId));
-      }
-      function closeWindow(wid){
-        const wEl = document.getElementById(wid);
-        if(!wEl) return;
-        wEl.classList.add('animate-pop');
-        wEl.style.opacity=0;
-        wEl.style.transform='scale(0.9)';
-        setTimeout(()=>{
-          wEl.remove();
-          const idx = state.windows.indexOf(wid);
-          if(idx!==-1) state.windows.splice(idx,1);
-        },300);
-      }
-      function minimizeWindow(wid){
-        const wEl = document.getElementById(wid);
-        if(!wEl) return;
-        wEl.classList.toggle('minimized');
-        if(wEl.classList.contains('minimized')){
-          wEl.setAttribute('data-prev-height', wEl.style.height||'auto');
-          wEl.setAttribute('data-prev-width', wEl.style.width||'auto');
-          wEl.setAttribute('data-prev-top', wEl.style.top||'0');
-          wEl.setAttribute('data-prev-left', wEl.style.left||'0');
-          wEl.style.height='40px';
-          wEl.style.width='200px';
-          wEl.style.top='calc(100% - 50px)';
-          const offset = state.windows.indexOf(wid)*210;
-          wEl.style.left=`${offset}px`;
-          const content = wEl.querySelector('.window-content');
-          if(content) content.style.display='none';
-        } else {
-          wEl.style.height = wEl.getAttribute('data-prev-height');
-          wEl.style.width = wEl.getAttribute('data-prev-width');
-          wEl.style.top = wEl.getAttribute('data-prev-top');
-          wEl.style.left = wEl.getAttribute('data-prev-left');
-          const content = wEl.querySelector('.window-content');
-          if(content) content.style.display='block';
-        }
-      }
-      function maximizeWindow(wid){
-        const wEl = document.getElementById(wid);
-        if(!wEl) return;
-        wEl.classList.toggle('maximized');
-        if(wEl.classList.contains('maximized')){
-          wEl.setAttribute('data-prev-height', wEl.style.height||'auto');
-          wEl.setAttribute('data-prev-width', wEl.style.width||'auto');
-          wEl.setAttribute('data-prev-top', wEl.style.top||'0');
-          wEl.setAttribute('data-prev-left', wEl.style.left||'0');
-          wEl.style.height='calc(100% - 50px)';
-          wEl.style.width='100%';
-          wEl.style.top='0';
-          wEl.style.left='0';
-        } else {
-          wEl.style.height = wEl.getAttribute('data-prev-height');
-          wEl.style.width = wEl.getAttribute('data-prev-width');
-          wEl.style.top = wEl.getAttribute('data-prev-top');
-          wEl.style.left = wEl.getAttribute('data-prev-left');
-        }
-      }
-      function bringWindowToFront(wid){
-        const wEl = document.getElementById(wid);
-        if(!wEl) return;
-        state.zIndex++;
-        wEl.style.zIndex= state.zIndex;
-        state.windows.forEach(id=>{
-          const we = document.getElementById(id);
-          if(we) we.classList.remove('active');
-        });
-        wEl.classList.add('active');
-      }
-
-      // Draggable logic
-      function dragMoveListener(e){
-        const tgt = e.target;
-        const x = (parseFloat(tgt.getAttribute('data-x'))||0)+ e.dx;
-        const y = (parseFloat(tgt.getAttribute('data-y'))||0)+ e.dy;
-        tgt.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-        tgt.setAttribute('data-x',x);
-        tgt.setAttribute('data-y',y);
-      }
-      function dragStartListener(e){
-        bringWindowToFront(e.target.id);
-      }
-
-      // random ID
-      function generateId(){
-        return '_'+Math.random().toString(36).substr(2,9);
-      }
-
-      init();
-    });
-  </script>
-</body>
-</html>
