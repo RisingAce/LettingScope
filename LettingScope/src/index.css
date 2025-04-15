@@ -1,0 +1,237 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 35 30% 96%;
+    --foreground: 35 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 35 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 35 20% 12%;
+
+    --primary: 30 60% 45%;
+    --primary-foreground: 35 30% 96%;
+
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 35 20% 12%;
+
+    --muted: 30 10% 90%;
+    --muted-foreground: 35 10% 40%;
+
+    --accent: 30 35% 85%;
+    --accent-foreground: 35 20% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 35 30% 96%;
+
+    --border: 30 15% 85%;
+    --input: 30 15% 85%;
+    --ring: 30 60% 45%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 35 20% 96%;
+    --sidebar-foreground: 35 20% 16%;
+    --sidebar-primary: 30 60% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 15% 90%;
+    --sidebar-accent-foreground: 35 20% 12%;
+    --sidebar-border: 30 20% 80%;
+    --sidebar-ring: 30 60% 45%;
+  }
+
+  .dark {
+    --background: 35 20% 10%;
+    --foreground: 35 15% 90%;
+
+    --card: 35 20% 13%;
+    --card-foreground: 35 15% 90%;
+
+    --popover: 35 20% 13%;
+    --popover-foreground: 35 15% 90%;
+
+    --primary: 30 60% 45%;
+    --primary-foreground: 35 15% 90%;
+
+    --secondary: 35 15% 25%;
+    --secondary-foreground: 35 15% 90%;
+
+    --muted: 35 15% 25%;
+    --muted-foreground: 35 10% 70%;
+
+    --accent: 35 15% 30%;
+    --accent-foreground: 35 15% 90%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 35 15% 90%;
+
+    --border: 35 15% 30%;
+    --input: 35 15% 30%;
+    --ring: 30 60% 55%;
+
+    --sidebar-background: 35 25% 15%;
+    --sidebar-foreground: 30 20% 96%;
+    --sidebar-primary: 30 60% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 25% 25%;
+    --sidebar-accent-foreground: 30 20% 96%;
+    --sidebar-border: 30 20% 30%;
+    --sidebar-ring: 30 60% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-artdeco;
+  }
+}
+
+/* Art Deco patterns and decorations */
+.art-deco-pattern {
+  background-image: radial-gradient(circle at center, var(--gold-accent) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.art-deco-divider {
+  position: relative;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+}
+
+.art-deco-divider::before,
+.art-deco-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  background-color: hsl(var(--primary));
+  border-radius: 50%;
+}
+
+.art-deco-divider::before {
+  left: calc(50% - 50px);
+}
+
+.art-deco-divider::after {
+  right: calc(50% - 50px);
+}
+
+/* Card decorations */
+.art-deco-card {
+  position: relative;
+  overflow: hidden;
+  @apply border-2 border-gold-300 dark:border-gold-700 rounded-lg;
+}
+
+.art-deco-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)/50%), hsl(var(--primary)));
+}
+
+/* Art Deco motifs */
+.art-deco-pattern-geometric {
+  background-image: 
+    linear-gradient(45deg, transparent 8%, hsl(var(--primary)/10%) 8%, hsl(var(--primary)/10%) 10%, transparent 10%),
+    linear-gradient(-45deg, transparent 8%, hsl(var(--primary)/10%) 8%, hsl(var(--primary)/10%) 10%, transparent 10%);
+  background-size: 20px 20px;
+}
+
+.art-deco-zigzag {
+  height: 4px;
+  background-image: linear-gradient(135deg, hsl(var(--primary)) 25%, transparent 25%), 
+    linear-gradient(225deg, hsl(var(--primary)) 25%, transparent 25%), 
+    linear-gradient(315deg, hsl(var(--primary)) 25%, transparent 25%), 
+    linear-gradient(45deg, hsl(var(--primary)) 25%, transparent 25%);
+  background-size: 10px 10px;
+}
+
+/* Custom scrollbar styles */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-artdeco-300 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-artdeco-400;
+  }
+}
+
+/* Button Hover Animation */
+.btn-hover-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-hover-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: all 0.5s ease;
+}
+
+.btn-hover-effect:hover::after {
+  left: 100%;
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 300ms, transform 300ms;
+}
