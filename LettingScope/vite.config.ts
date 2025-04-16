@@ -5,12 +5,8 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-export default defineConfig(({ mode }) => ({
-  
-  server: {
-    host: "::",
-    port: 8080,
-  },
+
+export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
@@ -18,9 +14,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    outDir: "dist",
-    rollupOptions: {
-      input: path.resolve(__dirname, "index.html"),
-    },
+    outDir: "dist"
   },
-}));
+});
