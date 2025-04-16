@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, SortAsc, SortDesc, Trash2, Calendar, Building, Edit } from "lucide-react";
@@ -29,6 +28,7 @@ const NotesPage: React.FC = () => {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [selectedPropertyId, setSelectedPropertyId] = useState("");
+  const [selectedBillId, setSelectedBillId] = useState("");
   
   // Get the current note being edited
   const currentNote = currentNoteId ? data.notes.find(note => note.id === currentNoteId) : null;
@@ -53,6 +53,7 @@ const NotesPage: React.FC = () => {
     setNoteTitle("");
     setNoteContent("");
     setSelectedPropertyId(data.properties.length > 0 ? data.properties[0].id : "");
+    setSelectedBillId("");
     setCurrentNoteId(null);
   };
   
@@ -71,15 +72,17 @@ const NotesPage: React.FC = () => {
     setNoteTitle(note.title);
     setNoteContent(note.content);
     setSelectedPropertyId(note.propertyId);
+    setSelectedBillId(note.billId || "");
     setIsEditNoteDialogOpen(true);
   };
   
   // Handle add note submit
   const handleAddNoteSubmit = () => {
-    if (!noteTitle.trim() || !noteContent.trim() || !selectedPropertyId) return;
+    if (!noteTitle.trim() || !noteContent.trim() || (!selectedPropertyId && !selectedBillId)) return;
     
     addNote({
-      propertyId: selectedPropertyId,
+      propertyId: selectedPropertyId || undefined,
+      billId: selectedBillId || undefined,
       title: noteTitle,
       content: noteContent,
     });
@@ -90,15 +93,16 @@ const NotesPage: React.FC = () => {
   
   // Handle edit note submit
   const handleEditNoteSubmit = () => {
-    if (!currentNoteId || !noteTitle.trim() || !noteContent.trim() || !selectedPropertyId) return;
+    if (!currentNoteId || !noteTitle.trim() || !noteContent.trim() || (!selectedPropertyId && !selectedBillId)) return;
     
     updateNote({
       id: currentNoteId,
-      propertyId: selectedPropertyId,
+      propertyId: selectedPropertyId || undefined,
+      billId: selectedBillId || undefined,
       title: noteTitle,
       content: noteContent,
       createdAt: currentNote?.createdAt || Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
     
     resetForm();
@@ -179,6 +183,24 @@ const NotesPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
+                {data.bills.length > 0 && (
+                  <div className="grid gap-2">
+                    <label htmlFor="bill" className="text-sm font-medium">Bill (optional)</label>
+                    <select
+                      id="bill"
+                      className="flex h-10 w-full rounded-md border border-gold-200 dark:border-gold-800 bg-white dark:bg-gold-950 px-3 py-2 text-sm"
+                      value={selectedBillId}
+                      onChange={e => setSelectedBillId(e.target.value)}
+                    >
+                      <option value="">No Bill</option>
+                      {data.bills.map(bill => (
+                        <option key={bill.id} value={bill.id}>
+                          {bill.provider} ({formatDate(bill.dueDate)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <label htmlFor="title" className="text-sm font-medium">
                     Title
@@ -244,6 +266,24 @@ const NotesPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
+                {data.bills.length > 0 && (
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-bill" className="text-sm font-medium">Bill (optional)</label>
+                    <select
+                      id="edit-bill"
+                      className="flex h-10 w-full rounded-md border border-gold-200 dark:border-gold-800 bg-white dark:bg-gold-950 px-3 py-2 text-sm"
+                      value={selectedBillId}
+                      onChange={e => setSelectedBillId(e.target.value)}
+                    >
+                      <option value="">No Bill</option>
+                      {data.bills.map(bill => (
+                        <option key={bill.id} value={bill.id}>
+                          {bill.provider} ({formatDate(bill.dueDate)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <label htmlFor="edit-title" className="text-sm font-medium">
                     Title
