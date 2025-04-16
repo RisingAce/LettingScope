@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAppData } from "@/contexts/AppContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,55 @@ import {
 } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UtilityType, BillStatus } from "@/types";
+import { useLocalDocStore, LocalDocMeta } from "@/hooks/useLocalDocStore";
+
+// Custom hook for loading local bill thumbnails
+function useBillThumbnail(localDocKey?: string) {
+  const { getDoc, getPreviewUrl } = useLocalDocStore();
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    async function loadThumb() {
+      console.log('BillThumbnail: localDocKey:', localDocKey);
+      if (localDocKey) {
+        const blob = await getDoc(localDocKey);
+        console.log('BillThumbnail: blob:', blob);
+        if (blob && active) {
+          const url = getPreviewUrl(blob);
+          console.log('BillThumbnail: previewUrl:', url);
+          setThumbUrl(url);
+        }
+      } else {
+        setThumbUrl(null);
+      }
+    }
+    loadThumb();
+    return () => { active = false; };
+  }, [localDocKey, getDoc, getPreviewUrl]);
+  return thumbUrl;
+}
+
+// New BillThumbnail component
+function BillThumbnail({ localDocKey, bill, onClick }: { localDocKey?: string, bill: any, onClick: (bill: any) => void }) {
+  const thumbUrl = useBillThumbnail(localDocKey);
+  console.log('BillThumbnail render: bill:', bill, 'localDocKey:', localDocKey, 'thumbUrl:', thumbUrl);
+
+  return (
+    <div className="flex items-center justify-center h-16 w-16 bg-gold-50 rounded border border-gold-200 cursor-pointer group" onClick={() => onClick(bill)}>
+      {thumbUrl ? (
+        <img
+          src={thumbUrl}
+          alt="Bill thumbnail"
+          className="h-16 w-16 object-cover rounded border border-gold-200 shadow-md transition-transform hover:scale-105 hover:shadow-lg"
+          style={{ background: '#fff' }}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
+        />
+      ) : (
+        <FileText className="w-8 h-8 text-gold-400" />
+      )}
+    </div>
+  );
+}
 
 const BillsPage: React.FC = () => {
   const { data, formatCurrency, formatDate } = useAppData();
@@ -35,13 +84,7 @@ const BillsPage: React.FC = () => {
     key: "dueDate",
     direction: "desc",
   });
-
-  const sortOptions = {
-    dueDate: (a: any, b: any) => a.dueDate - b.dueDate,
-    amount: (a: any, b: any) => a.amount - b.amount,
-    provider: (a: any, b: any) => a.provider.localeCompare(b.provider),
-    status: (a: any, b: any) => a.status.localeCompare(b.status),
-  };
+  const { getDoc, getPreviewUrl } = useLocalDocStore();
 
   const handleSort = (key: keyof typeof sortOptions) => {
     setSortConfig({
@@ -51,13 +94,31 @@ const BillsPage: React.FC = () => {
     });
   };
 
-  const handleViewDocument = (bill: any) => {
+  const handleViewDocument = async (bill: any) => {
     setSelectedBill(bill);
     setIsPreviewOpen(true);
-    setPreviewUrl(getBillDocumentUrl(bill));
+    let url = getBillDocumentUrl(bill);
+    if (bill.localDocKeys?.[0]) {
+      const blob = await getDoc(bill.localDocKeys[0]);
+      if (blob) url = getPreviewUrl(blob);
+    } else if (bill.localDocKey) {
+      const blob = await getDoc(bill.localDocKey);
+      if (blob) url = getPreviewUrl(blob);
+    }
+    setPreviewUrl(url);
   };
 
-  // Function to format utility type for display
+  const handleBillThumbnailClick = (bill: any) => {
+    handleViewDocument(bill);
+  };
+
+  const sortOptions = {
+    dueDate: (a: any, b: any) => a.dueDate - b.dueDate,
+    amount: (a: any, b: any) => a.amount - b.amount,
+    provider: (a: any, b: any) => a.provider.localeCompare(b.provider),
+    status: (a: any, b: any) => a.status.localeCompare(b.status),
+  };
+
   const formatUtilityType = (types: string) => {
     const arr = types.split(",");
     return arr.map(type =>
@@ -67,26 +128,6 @@ const BillsPage: React.FC = () => {
     ).join(", ");
   };
 
-  // Utility: get robust thumbnail from bill
-  const getBillThumbnail = (bill: any) => {
-    // If bill.documentThumbnail exists, use it
-    if (bill.documentThumbnail) return bill.documentThumbnail;
-    // If documentUrl is a JSON string of DocumentPreview[]
-    try {
-      if (bill.documentUrl && bill.documentUrl.startsWith("[")) {
-        const docs = JSON.parse(bill.documentUrl);
-        if (Array.isArray(docs) && docs[0] && docs[0].thumbnail) {
-          return docs[0].thumbnail;
-        }
-      }
-    } catch (e) {
-      // Debug: log parse errors
-      console.warn('Error parsing documentUrl for thumbnail', bill.documentUrl, e);
-    }
-    return null;
-  };
-
-  // Utility: get actual document file URL from bill
   const getBillDocumentUrl = (bill: any) => {
     if (!bill.documentUrl) return null;
     try {
@@ -100,7 +141,6 @@ const BillsPage: React.FC = () => {
 
   const filteredBills = data.bills
     .filter(bill => {
-      // Apply search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const property = data.properties.find(p => p.id === bill.propertyId);
@@ -113,12 +153,10 @@ const BillsPage: React.FC = () => {
       return true;
     })
     .filter(bill => {
-      // Apply status filter
       if (statusFilter === "all") return true;
       return bill.status === statusFilter;
     })
     .filter(bill => {
-      // Apply utility filter
       if (utilityFilter === "all") return true;
       if (bill.utilityType.includes(utilityFilter)) {
         return true;
@@ -127,7 +165,6 @@ const BillsPage: React.FC = () => {
       }
     })
     .sort((a, b) => {
-      // Apply sorting
       const sortFn = sortOptions[sortConfig.key];
       const result = sortFn(a, b);
       return sortConfig.direction === "asc" ? result : -result;
@@ -296,35 +333,7 @@ const BillsPage: React.FC = () => {
                           </span>
                         </TableCell>
                         <TableCell>
-                          {/* PDF/image thumbnail logic */}
-                          {getBillThumbnail(bill) ? (
-                            bill.documentUrl && bill.documentUrl.endsWith('.pdf') ? (
-                              <div className="flex items-center justify-center h-16 w-16 bg-gold-50 rounded border border-gold-200 cursor-pointer group" onClick={() => handleViewDocument(bill)}>
-                                <img
-                                  src={getBillThumbnail(bill)}
-                                  alt="PDF thumbnail"
-                                  className="h-16 w-16 object-cover rounded border border-gold-200 shadow-md transition-transform hover:scale-105 hover:shadow-lg"
-                                  style={{ background: '#fff' }}
-                                  onError={e => { e.currentTarget.style.display = 'none'; }}
-                                />
-                                <span className="absolute bottom-1 right-1 bg-gold-500 text-white text-xs px-1 rounded">PDF</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center h-16 w-16 bg-gold-50 rounded border border-gold-200 cursor-pointer group" onClick={() => handleViewDocument(bill)}>
-                                <img
-                                  src={getBillThumbnail(bill)}
-                                  alt="Bill thumbnail"
-                                  className="h-16 w-16 object-cover rounded border border-gold-200 shadow-md transition-transform hover:scale-105 hover:shadow-lg"
-                                  style={{ background: '#fff' }}
-                                  onError={e => { e.currentTarget.style.display = 'none'; }}
-                                />
-                              </div>
-                            )
-                          ) : (
-                            <div className="flex items-center justify-center h-16 w-16 bg-gold-50 rounded border border-gold-200">
-                              <FileText className="w-8 h-8 text-gold-400" />
-                            </div>
-                          )}
+                          <BillThumbnail localDocKey={bill.localDocKeys?.[0] || bill.localDocKey} bill={bill} onClick={handleBillThumbnailClick} />
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -336,7 +345,7 @@ const BillsPage: React.FC = () => {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {bill.documentUrl && (
+                            {(bill.localDocKeys?.length || bill.localDocKey || bill.documentUrl) && (
                               <Button 
                                 size="sm" 
                                 variant="outline"

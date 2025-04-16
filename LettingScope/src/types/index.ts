@@ -10,6 +10,7 @@ export type Property = {
   featured?: boolean;
   rentalAmount?: number;
   leaseEndDate?: number;
+  localDocKey?: string; // Key for IndexedDB local document storage (if needed)
   createdAt: number;
   updatedAt: number;
 };
@@ -39,6 +40,8 @@ export type Bill = {
   paidDate?: number;
   documentUrl?: string;
   notes?: string;
+  localDocKey?: string; // Key for IndexedDB local document storage (legacy)
+  localDocKeys?: string[]; // Key for IndexedDB local document storage (multi-doc support)
   createdAt: number;
   updatedAt: number;
 };

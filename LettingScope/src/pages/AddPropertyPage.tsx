@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(1, "Property name is required"),
@@ -88,16 +89,8 @@ const AddPropertyPage: React.FC = () => {
     try {
       const propertyData = {
         ...property,
-        name: values.name,
-        address: values.address,
-        propertyType: values.propertyType,
-        landlordName: values.landlordName || "",
-        landlordContact: values.landlordContact || "",
-        tenantName: values.tenantName || "",
-        tenantContact: values.tenantContact || "",
-        featured: values.featured || false,
-        rentalAmount: values.rentalAmount,
-        leaseEndDate: values.leaseEndDate ? values.leaseEndDate.getTime() : undefined
+        ...values,
+        leaseEndDate: values.leaseEndDate ? values.leaseEndDate.getTime() : undefined,
       };
       if (editing) {
         updateProperty(propertyData);

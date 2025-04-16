@@ -16,10 +16,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { extractTextFromPDF, parseBillData, ExtractedBillData, generatePDFThumbnail } from "@/utils/pdfUtils";
 import { LoadingIcon } from "@/components/ui/loading-icon";
 import type { UtilityType } from "@/types/index";
+import { useLocalDocStore } from "@/hooks/useLocalDocStore";
 
 const utilitiesSchema = z.object({
   propertyId: z.string().min(1, "Property selection is required"),
@@ -32,21 +33,23 @@ const utilitiesSchema = z.object({
   status: z.enum(["pending", "paid", "overdue", "disputed"]).optional(),
   paid: z.boolean().optional(),
   paidDate: z.date().optional(),
-  documentUrl: z.string().optional(),
+  localDocKeys: z.array(z.string()).optional(),
   notes: z.string().optional(),
 });
 
-type BillFormValues = z.infer<typeof utilitiesSchema>;
+type BillFormValues = z.infer<typeof utilitiesSchema> & { documents?: DocumentPreview[] };
 
 interface DocumentPreview {
   name: string;
   url: string;
   thumbnail: string | null;
   isPdf: boolean;
+  localDocKey: string | undefined;
 }
 
 const AddBillPage: React.FC = () => {
   const { addBill, updateBill, getBillById, data } = useAppData();
+  const { saveDoc, getDoc, getPreviewUrl } = useLocalDocStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { billId } = useParams();
@@ -71,7 +74,7 @@ const AddBillPage: React.FC = () => {
       status: "pending",
       paid: false,
       paidDate: undefined,
-      documentUrl: "",
+      localDocKeys: [],
       notes: "",
     },
   });
@@ -79,41 +82,45 @@ const AddBillPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAttachment = async (file: File) => {
-    const fileUrl = URL.createObjectURL(file);
+    let localDocKey: string | undefined = undefined;
+    let previewUrl: string = '';
+    let thumbnail = null;
     const isPdf = file.type === 'application/pdf';
     const isImage = file.type.startsWith('image/');
-    let thumbnail = null;
-    if (isImage) {
-      thumbnail = fileUrl;
-    } else if (isPdf) {
-      try {
-        thumbnail = await generatePDFThumbnail(file);
-        if (!thumbnail) {
-          toast.warning('PDF thumbnail generation failed.');
+
+    try {
+      localDocKey = await saveDoc(file);
+      const blob = await getDoc(localDocKey);
+      if (blob) {
+        previewUrl = getPreviewUrl(blob);
+        if (isImage) {
+          thumbnail = previewUrl;
+        } else if (isPdf) {
+          thumbnail = await generatePDFThumbnail(file);
         }
-        console.log('PDF thumbnail result:', thumbnail);
-      } catch (err) {
-        console.error('Error generating PDF thumbnail:', err);
-        thumbnail = null;
-        toast.error('Error generating PDF thumbnail.');
       }
+    } catch (err) {
+      toast({ description: 'Failed to save document locally.' });
+      return;
     }
-    setDocuments(prev => [...prev, {
-      name: file.name,
-      url: fileUrl,
-      thumbnail: thumbnail,
-      isPdf: isPdf
-    }]);
-    if (isPdf) {
-      console.log('PDF document added:', { name: file.name, url: fileUrl, thumbnail });
-    }
+
+    setDocuments(prev => [
+      ...prev,
+      {
+        name: file.name,
+        url: previewUrl,
+        thumbnail: thumbnail,
+        isPdf: isPdf,
+        localDocKey,
+      }
+    ]);
   };
 
   const handleParsePdf = async (index: number) => {
     const doc = documents[index];
     if (!doc || !doc.isPdf) return;
     setIsParsing(true);
-    toast.info("Analyzing PDF bill...");
+    toast({ description: "Analyzing PDF bill..." });
     try {
       const response = await fetch(doc.url);
       const blob = await response.blob();
@@ -121,9 +128,9 @@ const AddBillPage: React.FC = () => {
       const textContent = await extractTextFromPDF(file);
       const extractedData = parseBillData(textContent);
       updateFormWithExtractedData(extractedData);
-      toast.success("Bill details extracted from PDF");
+      toast({ description: "Bill details extracted from PDF" });
     } catch (error) {
-      toast.error("Failed to analyze PDF");
+      toast({ description: "Failed to analyze PDF" });
     } finally {
       setIsParsing(false);
     }
@@ -167,13 +174,12 @@ const AddBillPage: React.FC = () => {
     }
   };
 
-  const removeDocument = (index: number) => {
+  const removeDocument = async (index: number) => {
     setDocuments(prev => {
       const updated = [...prev];
-      URL.revokeObjectURL(updated[index].url);
-      if (updated[index].thumbnail) {
-        URL.revokeObjectURL(updated[index].thumbnail);
-      }
+      const doc = updated[index];
+      if (doc.url) URL.revokeObjectURL(doc.url);
+      if (doc.thumbnail) URL.revokeObjectURL(doc.thumbnail);
       updated.splice(index, 1);
       return updated;
     });
@@ -184,10 +190,8 @@ const AddBillPage: React.FC = () => {
       form.trigger();
       return;
     }
-    
     const values = form.getValues();
-    setBills(prev => [...prev, values]);
-    
+    setBills(prev => [...prev, { ...values, documents }]);
     form.reset({
       propertyId: values.propertyId,
       utilityType: ["electricity"],
@@ -199,14 +203,12 @@ const AddBillPage: React.FC = () => {
       status: "pending",
       paid: false,
       paidDate: undefined,
-      documentUrl: "",
+      localDocKeys: [],
       notes: "",
     });
-    
     setDocuments([]);
     setCurrentBillIndex(prev => prev + 1);
-    
-    toast.success("Bill added to batch. You can add more bills or submit all.");
+    toast({ description: "Bill added to batch. You can add more bills or submit all." });
   };
 
   const removeBill = (index: number) => {
@@ -215,37 +217,24 @@ const AddBillPage: React.FC = () => {
       updated.splice(index, 1);
       return updated;
     });
-    
     if (bills.length === 1) {
       setCurrentBillIndex(0);
     }
-    
-    toast.success("Bill removed from batch.");
+    toast({ description: "Bill removed from batch." });
   };
 
   const submitAllBills = () => {
-    console.log('submitAllBills called');
-    console.log('form.formState:', form.formState);
-    console.log('form.getValues():', form.getValues());
     let allBills = [...bills];
-    // Always add the current form values if propertyId is present
     const currentValues = form.getValues();
     if (currentValues.propertyId && typeof currentValues.propertyId === 'string' && currentValues.propertyId.trim() !== '') {
-      allBills.push(currentValues);
+      allBills.push({ ...currentValues, documents });
     }
-    console.log('allBills after push:', allBills);
-
     if (allBills.length === 0) {
-      toast.error("Please add at least one valid bill");
+      toast({ description: "Please add at least one valid bill" });
       return;
     }
-
     try {
       allBills.forEach(bill => {
-        let documentUrl = bill.documentUrl || "";
-        if (documents && documents.length > 0) {
-          documentUrl = JSON.stringify(documents);
-        }
         const billData = {
           propertyId: bill.propertyId,
           utilityType: Array.isArray(bill.utilityType)
@@ -263,14 +252,12 @@ const AddBillPage: React.FC = () => {
           status: bill.status || "pending",
           paid: bill.paid ?? false,
           paidDate: bill.paidDate ? (bill.paidDate instanceof Date ? bill.paidDate.getTime() : bill.paidDate) : undefined,
-          documentUrl: documentUrl,
           notes: bill.notes || "",
+          localDocKeys: bill.documents?.map(doc => doc.localDocKey).filter(Boolean) || [],
         };
         addBill(billData);
       });
-
-      toast.success(`${allBills.length} bill${allBills.length !== 1 ? 's' : ''} added successfully`);
-
+      toast({ description: `${allBills.length} bill${allBills.length !== 1 ? 's' : ''} added successfully` });
       if (preselectedPropertyId) {
         navigate(`/properties/${preselectedPropertyId}`);
       } else {
@@ -278,7 +265,7 @@ const AddBillPage: React.FC = () => {
       }
     } catch (error) {
       console.error("Error adding bills:", error);
-      toast.error("Failed to add bills");
+      toast({ description: "Failed to add bills" });
     }
   };
 
@@ -319,7 +306,6 @@ const AddBillPage: React.FC = () => {
 
   const onSubmit = async (values: BillFormValues) => {
     if (billId) {
-      // Compose a Bill object for updateBill
       const bill = {
         ...getBillById(billId),
         ...values,
@@ -330,12 +316,17 @@ const AddBillPage: React.FC = () => {
           : values.utilityType && ["electricity","gas","water","internet","councilTax","tv","other"].includes(values.utilityType)
             ? values.utilityType
             : "electricity",
+        status: values.status || "pending",
+        paid: values.paid ?? false,
+        provider: values.provider || "Unknown",
+        amount: values.amount ?? 0,
         issueDate: values.issueDate ? values.issueDate.valueOf() : undefined,
         dueDate: values.dueDate ? values.dueDate.valueOf() : undefined,
         paidDate: values.paidDate ? values.paidDate.valueOf() : undefined,
+        localDocKeys: documents.map(doc => doc.localDocKey).filter(Boolean),
       };
       await updateBill(bill);
-      toast.success("Bill updated successfully");
+      toast({ description: "Bill updated successfully" });
     } else {
       await addBill({
         ...values,
@@ -354,8 +345,9 @@ const AddBillPage: React.FC = () => {
         issueDate: values.issueDate ? values.issueDate.valueOf() : undefined,
         dueDate: values.dueDate ? values.dueDate.valueOf() : undefined,
         paidDate: values.paidDate ? values.paidDate.valueOf() : undefined,
+        localDocKeys: documents.map(doc => doc.localDocKey).filter(Boolean),
       });
-      toast.success("Bill added successfully");
+      toast({ description: "Bill added successfully" });
     }
     navigate("/bills");
   };

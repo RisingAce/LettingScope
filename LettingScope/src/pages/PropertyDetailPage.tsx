@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Building, ReceiptText, Bell, StickyNote, Calendar, PlusCircle, Trash2, Edit, Home, FileText, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,27 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/contexts/AppContext";
+import { useLocalDocStore, LocalDocMeta } from "@/hooks/useLocalDocStore";
+
+// Custom hook for loading local bill thumbnails
+function useBillThumbnail(localDocKey?: string) {
+  const { getDoc, getPreviewUrl } = useLocalDocStore();
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    async function loadThumb() {
+      if (localDocKey) {
+        const blob = await getDoc(localDocKey);
+        if (blob && active) setThumbUrl(getPreviewUrl(blob));
+      } else {
+        setThumbUrl(null);
+      }
+    }
+    loadThumb();
+    return () => { active = false; };
+  }, [localDocKey, getDoc, getPreviewUrl]);
+  return thumbUrl;
+}
 
 const PropertyDetailPage: React.FC = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
@@ -17,12 +38,29 @@ const PropertyDetailPage: React.FC = () => {
   const [selectedBill, setSelectedBill] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+
+  useEffect(() => {
+    // Load all local docs for this property
+  }, []);
+
+  // When user wants to view a document
+  const handleViewDocument = async (bill: any) => {
+    setSelectedBill(bill);
+    setIsPreviewOpen(true);
+    let url = bill.documentUrl;
+    if (bill.localDocKey) {
+      const { getDoc, getPreviewUrl } = useLocalDocStore();
+      const blob = await getDoc(bill.localDocKey);
+      if (blob) url = getPreviewUrl(blob);
+    }
+    setPreviewUrl(url);
+  };
+
   const property = getPropertyById(propertyId ?? "");
   const bills = getBillsByPropertyId(propertyId ?? "");
   const chasers = getChasersByPropertyId(propertyId ?? "");
   const notes = getNotesByPropertyId(propertyId ?? "");
-  
+
   // Function to format utility type for display
   const formatUtilityType = (types: string) => {
     const arr = types.split(",");
@@ -31,18 +69,6 @@ const PropertyDetailPage: React.FC = () => {
       type === "councilTax" ? "Council Tax" :
       type.charAt(0).toUpperCase() + type.slice(1)
     ).join(", ");
-  };
-
-  // Function to get thumbnail from documentUrl
-  const getBillThumbnail = (bill: any) => {
-    if (bill.documentThumbnail) return bill.documentThumbnail;
-    try {
-      if (bill.documentUrl && bill.documentUrl.startsWith("[")) {
-        const docs = JSON.parse(bill.documentUrl);
-        if (Array.isArray(docs) && docs[0]?.thumbnail) return docs[0].thumbnail;
-      }
-    } catch {}
-    return null;
   };
 
   if (!property) {
@@ -59,7 +85,7 @@ const PropertyDetailPage: React.FC = () => {
       </div>
     );
   }
-  
+
   const handleDelete = () => {
     try {
       deleteProperty(property.id);
@@ -69,19 +95,6 @@ const PropertyDetailPage: React.FC = () => {
     }
   };
 
-  const handleViewDocument = (bill: any) => {
-    setSelectedBill(bill);
-    setIsPreviewOpen(true);
-    let url = bill.documentUrl;
-    try {
-      if (url && url.startsWith("[")) {
-        const docs = JSON.parse(url);
-        if (Array.isArray(docs) && docs[0]?.url) url = docs[0].url;
-      }
-    } catch {}
-    setPreviewUrl(url);
-  };
-  
   return (
     <div className="space-y-6">
       {/* Header with back button */}
@@ -267,54 +280,57 @@ const PropertyDetailPage: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {bills.map(bill => (
-                <Card key={bill.id} className="border-gold-200 dark:border-gold-800 hover:bg-gold-50 dark:hover:bg-gold-900/10 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1 p-2 rounded-md bg-gold-100 dark:bg-gold-900/30">
-                          <FileText className="h-5 w-5 text-gold-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{bill.provider}</h3>
-                          <p className="text-sm text-muted-foreground capitalize">{formatUtilityType(bill.utilityType)}</p>
-                          <div className="mt-2 flex flex-wrap gap-2 items-center">
-                            <Badge variant={bill.status === "paid" ? "outline" : bill.status === "overdue" ? "destructive" : "secondary"} className="text-xs">
-                              {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                            </Badge>
-                            <span className="text-sm flex items-center gap-1">
-                              <span className="font-medium">£</span>
-                              {bill.amount !== undefined && bill.amount !== null && !isNaN(bill.amount) ? Number(bill.amount).toFixed(2) : '—'}
-                            </span>
-                            <span className="text-sm flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Due: {formatDate(bill.dueDate)}
-                            </span>
+              {bills.map(bill => {
+                const thumbUrl = useBillThumbnail(bill.localDocKey);
+                return (
+                  <Card key={bill.id} className="border-gold-200 dark:border-gold-800 hover:bg-gold-50 dark:hover:bg-gold-900/10 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 p-2 rounded-md bg-gold-100 dark:bg-gold-900/30">
+                            <FileText className="h-5 w-5 text-gold-500" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{bill.provider}</h3>
+                            <p className="text-sm text-muted-foreground capitalize">{formatUtilityType(bill.utilityType)}</p>
+                            <div className="mt-2 flex flex-wrap gap-2 items-center">
+                              <Badge variant={bill.status === "paid" ? "outline" : bill.status === "overdue" ? "destructive" : "secondary"} className="text-xs">
+                                {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                              </Badge>
+                              <span className="text-sm flex items-center gap-1">
+                                <span className="font-medium">£</span>
+                                {bill.amount !== undefined && bill.amount !== null && !isNaN(bill.amount) ? Number(bill.amount).toFixed(2) : '—'}
+                              </span>
+                              <span className="text-sm flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Due: {formatDate(bill.dueDate)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() => navigate(`/bills/${bill.id}/edit`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {getBillThumbnail(bill) && (
-                          <img src={getBillThumbnail(bill)} alt="Bill thumbnail" className="h-10 w-10 object-cover rounded" />
-                        )}
-                        {bill.documentUrl && (
-                          <Button size="sm" variant="outline" onClick={() => handleViewDocument(bill)}>
-                            View
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => navigate(`/bills/${bill.id}/edit`)}
+                          >
+                            <Edit className="h-4 w-4" />
                           </Button>
-                        )}
+                          {thumbUrl && (
+                            <img src={thumbUrl} alt="Bill thumbnail" className="h-10 w-10 object-cover rounded" />
+                          )}
+                          {bill.documentUrl && (
+                            <Button size="sm" variant="outline" onClick={() => handleViewDocument(bill)}>
+                              View
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
