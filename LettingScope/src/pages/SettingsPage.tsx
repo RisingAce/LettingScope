@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import { ArrowUpFromLine, ArrowDownToLine, Trash2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 const SettingsPage: React.FC = () => {
-  const { data, updateSettings, exportData, importData, clearData } = useAppData();
+  const { data, updateSettings, exportDataZip, importDataZip, clearData } = useAppData();
   
   const [notificationDays, setNotificationDays] = useState(data.settings.notificationDaysBefore);
   const [currency, setCurrency] = useState(data.settings.currency);
@@ -23,7 +22,7 @@ const SettingsPage: React.FC = () => {
   const [emailParsingEnabled, setEmailParsingEnabled] = useState(data.settings.emailParsingEnabled);
   
   // File input reference
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputZipRef = React.useRef<HTMLInputElement>(null);
   
   // Handle settings save
   const handleSaveSettings = () => {
@@ -36,32 +35,28 @@ const SettingsPage: React.FC = () => {
     toast.success("Settings saved successfully");
   };
   
-  // Handle import
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle ZIP import
+  const handleImportZip = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        const jsonData = e.target?.result as string;
-        const success = importData(jsonData);
+        const arrayBuffer = e.target?.result;
+        if (!arrayBuffer || typeof arrayBuffer !== 'object') throw new Error('Invalid file');
+        const success = await importDataZip(new Blob([arrayBuffer]));
         if (success) {
-          toast.success("Data imported successfully");
+          toast.success('Full backup imported successfully!');
         } else {
-          toast.error("Failed to import data");
+          toast.error('Failed to import backup.');
         }
       } catch (error) {
-        console.error("Error importing data:", error);
-        toast.error("Failed to import data");
+        console.error('Error importing backup:', error);
+        toast.error('Failed to import backup.');
       }
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputZipRef.current) fileInputZipRef.current.value = '';
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
   
   return (
@@ -160,42 +155,42 @@ const SettingsPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* --- Export/Import Full Backup (ZIP) Only --- */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium">Export Data</h4>
+                  <h4 className="font-medium">Export Data (Full Backup)</h4>
                   <p className="text-sm text-muted-foreground">
-                    Download your data as a JSON file
+                    Download all your data and documents as a ZIP backup file
                   </p>
                 </div>
-                <Button variant="outline" onClick={exportData}>
+                <Button variant="outline" onClick={exportDataZip}>
                   <ArrowDownToLine className="mr-2 h-4 w-4" />
-                  Export
+                  Export Full Backup (ZIP)
                 </Button>
               </div>
             </div>
-            
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium">Import Data</h4>
+                  <h4 className="font-medium">Import Data (Full Backup)</h4>
                   <p className="text-sm text-muted-foreground">
-                    Import data from a JSON file
+                    Import your data and documents from a ZIP backup file
                   </p>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => fileInputZipRef.current?.click()}
                 >
                   <ArrowUpFromLine className="mr-2 h-4 w-4" />
-                  Import
+                  Import Full Backup (ZIP)
                 </Button>
                 <input
                   type="file"
-                  ref={fileInputRef}
-                  accept=".json"
+                  ref={fileInputZipRef}
+                  accept=".zip"
                   style={{ display: "none" }}
-                  onChange={handleImport}
+                  onChange={handleImportZip}
                 />
               </div>
             </div>

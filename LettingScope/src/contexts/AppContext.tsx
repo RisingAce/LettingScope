@@ -9,7 +9,8 @@ import {
   addBill, updateBill, deleteBill,
   addChaser, updateChaser, deleteChaser,
   addNote, updateNote, deleteNote,
-  updateSettings, getStats, generateId
+  updateSettings, getStats, generateId,
+  exportDataAsZip, importDataFromZip
 } from "@/lib/storage";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -43,6 +44,8 @@ interface AppContextType {
   exportData: () => void;
   importData: (jsonData: string) => boolean;
   clearData: () => void;
+  exportDataZip: () => void;
+  importDataZip: (zipFile: File | Blob) => Promise<boolean>;
   
   // Utility functions
   getPropertyById: (propertyId: string) => Property | undefined;
@@ -53,6 +56,7 @@ interface AppContextType {
   getBillsByPropertyId: (propertyId: string) => Bill[];
   getChasersByPropertyId: (propertyId: string) => Chaser[];
   getNotesByPropertyId: (propertyId: string) => Note[];
+  getNotesByBillId: (billId: string) => Note[];
   
   formatCurrency: (amount: number) => string;
   formatDate: (timestamp: number) => string;
@@ -205,18 +209,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const handleDeleteNote = (noteId: string) => {
-    try {
-      const note = data?.notes.find(n => n.id === noteId);
-      if (!note) throw new Error("Note not found");
-      
-      deleteNote(noteId);
-      syncData();
-      toast.success(`Note "${note.title}" deleted successfully`);
-    } catch (error) {
-      console.error("Error deleting note:", error);
-      toast.error("Failed to delete note");
-      throw error;
-    }
+    deleteNote(noteId);
+    syncData();
+    toast.success("Note deleted successfully");
   };
 
   // Settings operations
@@ -249,6 +244,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const handleExportDataZip = async () => {
+    try {
+      const zipBlob = await exportDataAsZip();
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lettingscope-backup-${format(new Date(), "yyyy-MM-dd")}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Full backup (with documents) exported as ZIP");
+    } catch (error) {
+      console.error("Error exporting ZIP:", error);
+      toast.error("Failed to export full backup");
+    }
+  };
+
   const handleImportData = (jsonData: string) => {
     try {
       const success = importDataFromJson(jsonData);
@@ -263,6 +276,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Error importing data:", error);
       toast.error("Failed to import data");
+      return false;
+    }
+  };
+
+  const handleImportDataZip = async (zipFile: File | Blob) => {
+    try {
+      const success = await importDataFromZip(zipFile);
+      if (success) {
+        syncData();
+        toast.success("Full backup (with documents) imported successfully");
+        return true;
+      } else {
+        toast.error("Failed to import backup: Invalid ZIP");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error importing ZIP:", error);
+      toast.error("Failed to import backup");
       return false;
     }
   };
@@ -305,6 +336,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const getNotesByPropertyId = (propertyId: string) => {
     return data?.notes.filter(note => note.propertyId === propertyId) || [];
+  };
+
+  const getNotesByBillId = (billId: string) => {
+    return data?.notes.filter(note => note.billId === billId) || [];
   };
 
   const formatCurrency = (amount: number) => {
@@ -380,6 +415,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     exportData: handleExportData,
     importData: handleImportData,
     clearData: handleClearData,
+    exportDataZip: handleExportDataZip,
+    importDataZip: handleImportDataZip,
     
     // Utility functions
     getPropertyById,
@@ -390,6 +427,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     getBillsByPropertyId,
     getChasersByPropertyId,
     getNotesByPropertyId,
+    getNotesByBillId,
     
     formatCurrency,
     formatDate,

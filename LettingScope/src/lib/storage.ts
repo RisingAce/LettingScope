@@ -1,5 +1,6 @@
-
 import { AppData, Property, Bill, Chaser, Note, Activity, AppSettings } from "@/types";
+import JSZip from "jszip";
+import { get, keys, set } from "idb-keyval";
 
 // Default app settings
 const DEFAULT_SETTINGS: AppSettings = {
@@ -72,6 +73,76 @@ export const importDataFromJson = (jsonData: string): boolean => {
     return true;
   } catch (error) {
     console.error("Error importing data:", error);
+    return false;
+  }
+};
+
+// Export data and all bill documents as ZIP (with metadata)
+export const exportDataAsZip = async (): Promise<Blob> => {
+  const data = loadData();
+  const zip = new JSZip();
+  zip.file("data.json", JSON.stringify(data, null, 2));
+
+  // Gather all localDocKeys from bills (support both localDocKeys and legacy localDocKey)
+  const allDocKeys = Array.from(new Set(
+    data.bills.flatMap((bill) => [
+      ...(bill.localDocKeys || []),
+      ...(bill.localDocKey ? [bill.localDocKey] : [])
+    ]).filter(Boolean)
+  ));
+
+  // Build metadata for each doc
+  const metadata: Record<string, { filename: string; mimeType: string }> = {};
+
+  for (const key of allDocKeys) {
+    const blob = await get(key);
+    if (blob) {
+      // Try to get filename and type from blob (if stored)
+      let filename = key;
+      let mimeType = blob.type || "application/octet-stream";
+      // If you store metadata elsewhere, fetch it here
+      // Otherwise, fallback to key and blob.type
+      metadata[key] = { filename, mimeType };
+      zip.file(`docs/${key}`, blob, { binary: true });
+    }
+  }
+  zip.file("docs/metadata.json", JSON.stringify(metadata, null, 2));
+
+  return zip.generateAsync({ type: "blob" });
+};
+
+// Import data and all bill documents from ZIP (with metadata)
+export const importDataFromZip = async (zipFile: File | Blob): Promise<boolean> => {
+  try {
+    const zip = await JSZip.loadAsync(zipFile);
+    const jsonFile = zip.file("data.json");
+    if (!jsonFile) throw new Error("Missing data.json in ZIP");
+    const jsonData = await jsonFile.async("string");
+    const parsedData = JSON.parse(jsonData);
+    saveData(parsedData);
+
+    // Read metadata
+    let metadata: Record<string, { filename: string; mimeType: string }> = {};
+    const metaFile = zip.file("docs/metadata.json");
+    if (metaFile) {
+      metadata = JSON.parse(await metaFile.async("string"));
+    }
+
+    // Import all docs
+    const docFiles = Object.values(zip.files).filter(file => file.name.startsWith("docs/") && !file.name.endsWith("metadata.json"));
+    for (const file of docFiles) {
+      const key = file.name.replace(/^docs\//, "");
+      // Use correct mimeType if available
+      let mimeType = metadata[key]?.mimeType || "application/octet-stream";
+      const blob = await file.async("blob");
+      // Create a new Blob with correct type (if needed)
+      const finalBlob = mimeType && blob.type !== mimeType ? new Blob([blob], { type: mimeType }) : blob;
+      await set(key, finalBlob);
+      // Optionally, store filename somewhere if your app uses it
+    }
+    return true;
+  } catch (error) {
+    console.error("Error importing ZIP:", error);
     return false;
   }
 };

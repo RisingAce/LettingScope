@@ -17,7 +17,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const location = useLocation();
-  const { stats } = useAppData();
+  const { stats, exportDataZip } = useAppData();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -142,6 +142,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 </Link>
               ))}
             </nav>
+
+            {/* --- Export Reminder Banner --- */}
+            <div className="mt-6 mx-2 p-3 rounded-lg border-2 border-gold-300 bg-gold-50 dark:bg-gold-900/10 flex flex-col items-center text-center shadow-gold-200/30 shadow-md">
+              <span className="text-gold-900 dark:text-gold-200 font-artdeco text-base font-semibold mb-1">
+                Remember to back up your data before you finish your session.
+              </span>
+              <span className="text-xs text-gold-700 dark:text-gold-300/80 mb-2">
+                This will safeguard your bills, documents, and settings.
+              </span>
+              <Button
+                size="sm"
+                className="bg-gold-400 hover:bg-gold-500 text-white font-bold shadow-gold-200/30 mb-2"
+                onClick={exportDataZip}
+              >
+                Export Full Backup
+              </Button>
+              <Link
+                to="/settings"
+                className="text-xs text-gold-700 dark:text-gold-300 hover:text-gold-900 dark:hover:text-gold-100 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Go to Settings
+              </Link>
+            </div>
           </ScrollArea>
 
           <div className="art-deco-divider w-full px-6 mx-auto"></div>

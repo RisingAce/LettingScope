@@ -62,11 +62,16 @@ export type Chaser = {
   updatedAt: number;
 };
 
+export type NotePriority = "low" | "medium" | "high";
+
 export type Note = {
   id: string;
-  propertyId: string;
+  propertyId?: string;
+  billId?: string;
   title: string;
   content: string;
+  completed?: boolean;
+  priority?: NotePriority;
   createdAt: number;
   updatedAt: number;
 };

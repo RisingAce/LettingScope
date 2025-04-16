@@ -198,6 +198,22 @@ const PropertyDetailPage: React.FC = () => {
                 <span className="text-muted-foreground">Featured</span>
                 <span className="font-medium">{property.featured ? "Yes" : "No"}</span>
               </div>
+              {/* View Bill button if property has bills */}
+              {bills.length > 0 && (
+                <div className="flex justify-between border-b pb-2 border-gold-100 dark:border-gold-800">
+                  <span className="text-muted-foreground">Bills</span>
+                  <Button
+                    size="sm"
+                    className="bg-gold-400 hover:bg-gold-500 text-white font-bold"
+                    onClick={() => {
+                      // Go to bills page and scroll to first bill for this property
+                      navigate(`/bills?propertyId=${property.id}`);
+                    }}
+                  >
+                    View Bill{bills.length > 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           
@@ -325,6 +341,13 @@ const PropertyDetailPage: React.FC = () => {
                               View
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            className="bg-gold-400 hover:bg-gold-500 text-white font-bold"
+                            onClick={() => navigate(`/bills?highlight=${bill.id}`)}
+                          >
+                            View on Bills Page
+                          </Button>
                         </div>
                       </div>
                     </CardContent>

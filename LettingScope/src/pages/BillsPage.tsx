@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
-import { CreditCard, Plus, Search, Building, ArrowUpDown, FileText, Edit } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { CreditCard, Plus, Search, Building, ArrowUpDown, FileText, Edit, StickyNote } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -17,6 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CheckCircle, Trash2, Flag } from "lucide-react";
 import { UtilityType, BillStatus } from "@/types";
 import { useLocalDocStore, LocalDocMeta } from "@/hooks/useLocalDocStore";
 
@@ -69,8 +71,9 @@ function BillThumbnail({ localDocKey, bill, onClick }: { localDocKey?: string, b
 }
 
 const BillsPage: React.FC = () => {
-  const { data, formatCurrency, formatDate } = useAppData();
+  const { data, formatCurrency, formatDate, getNotesByBillId, addNote: addNoteToContext, updateNote, deleteNote } = useAppData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<BillStatus | "all">("all");
   const [utilityFilter, setUtilityFilter] = useState<string | "all">("all");
@@ -85,6 +88,23 @@ const BillsPage: React.FC = () => {
     direction: "desc",
   });
   const { getDoc, getPreviewUrl } = useLocalDocStore();
+  const [newNoteContent, setNewNoteContent] = useState("");
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [notesDialogBill, setNotesDialogBill] = useState<any | null>(null);
+  const [addNoteOpen, setAddNoteOpen] = useState(false);
+
+  const highlightId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("highlight");
+  }, [location.search]);
+  const highlightedRef = React.useRef<HTMLTableRowElement>(null);
+  useEffect(() => {
+    if (highlightedRef.current) {
+      highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Optionally, focus for accessibility:
+      highlightedRef.current.focus({ preventScroll: true });
+    }
+  }, [highlightId]);
 
   const handleSort = (key: keyof typeof sortOptions) => {
     setSortConfig({
@@ -303,8 +323,14 @@ const BillsPage: React.FC = () => {
                 <TableBody>
                   {filteredBills.map((bill) => {
                     const property = data.properties.find(p => p.id === bill.propertyId);
+                    const isHighlighted = highlightId === bill.id;
                     return (
-                      <TableRow key={bill.id}>
+                      <TableRow
+                        key={bill.id}
+                        ref={isHighlighted ? highlightedRef : undefined}
+                        tabIndex={isHighlighted ? 0 : -1}
+                        className={isHighlighted ? "ring-2 ring-gold-400 ring-offset-2 animate-pulse bg-gold-50 dark:bg-gold-900/30" : ""}
+                      >
                         <TableCell className="font-medium">
                           <div>
                             <div className="font-medium">{bill.provider}</div>
@@ -364,6 +390,15 @@ const BillsPage: React.FC = () => {
                                 View Property
                               </Link>
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 border-gold-200 dark:border-gold-800 flex items-center gap-1"
+                              onClick={() => setNotesDialogBill(bill)}
+                            >
+                              <StickyNote className="w-4 h-4 mr-1" />
+                              Notes
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -394,35 +429,153 @@ const BillsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* PDF Preview Dialog */}
-      {isPreviewOpen && previewUrl && (
+      {/* Document Preview Dialog - handles images, PDFs, text, and fallback download */}
+      {isPreviewOpen && selectedBill && (
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>{selectedBill?.provider} - {formatUtilityType(selectedBill?.utilityType || '')} Bill</DialogTitle>
+              <DialogTitle>
+                {selectedBill?.provider} - {formatUtilityType(selectedBill?.utilityType || '')} Bill
+              </DialogTitle>
             </DialogHeader>
             <div className="mt-4">
-              {/* Show PDF or image or fallback */}
-              {(() => {
-                const isPdf = previewUrl && (
-                  previewUrl.endsWith('.pdf') ||
-                  previewUrl.startsWith('blob:') ||
-                  previewUrl.startsWith('data:application/pdf')
-                );
-                return isPdf ? (
-                  <iframe 
-                    src={previewUrl} 
-                    className="w-full h-[70vh] border border-gold-200 dark:border-gold-800 rounded-md"
-                    title="Bill Document"
-                  />
-                ) : (
-                  <img 
-                    src={previewUrl} 
-                    alt="Bill Document" 
-                    className="w-full max-h-[70vh] object-contain border border-gold-200 dark:border-gold-800 rounded-md mx-auto"
-                  />
-                );
-              })()}
+              <BillDocumentViewer bill={selectedBill} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {/* Bill Notes Modal Dialog */}
+      {notesDialogBill && (
+        <Dialog open={!!notesDialogBill} onOpenChange={open => !open && setNotesDialogBill(null)}>
+          <DialogContent className="max-w-2xl p-0 overflow-hidden shadow-2xl rounded-2xl border-0 bg-gradient-to-br from-gold-50 via-white to-gold-100 dark:from-gold-950 dark:via-gold-900 dark:to-gold-950">
+            <DialogHeader className="bg-gradient-to-r from-gold-500 via-gold-400 to-yellow-300 text-white px-8 py-6 rounded-t-2xl shadow-md">
+              <DialogTitle className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+                <StickyNote className="w-7 h-7 text-white drop-shadow" />
+                Notes for Bill
+                <span className="ml-2 bg-white/20 px-3 py-1 rounded-lg text-base font-semibold tracking-wide text-white shadow-sm">
+                  {notesDialogBill.provider} <span className="opacity-80">({formatCurrency(notesDialogBill.amount)})</span>
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="bg-white dark:bg-gold-950 px-8 py-8">
+              <ul className="space-y-4 mb-8 max-h-64 overflow-y-auto pr-2">
+                {getNotesByBillId(notesDialogBill.id).length === 0 && (
+                  <li className="text-center text-base text-muted-foreground italic py-8">No notes for this bill yet.</li>
+                )}
+                {getNotesByBillId(notesDialogBill.id).map(note => (
+                  <li key={note.id} className={`bg-gold-50/80 dark:bg-gold-950/70 rounded-xl p-4 border border-gold-100 dark:border-gold-900 shadow-sm flex flex-col gap-1 relative transition-all ${note.completed ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <StickyNote className="w-4 h-4 text-gold-400" />
+                      <span className={`font-semibold text-gold-900 dark:text-gold-100 text-base ${note.completed ? 'line-through' : ''}`}>{note.title}</span>
+                      <div className="flex items-center gap-1 ml-2">
+                        {/* Priority Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="w-7 h-7 p-0" title="Set Priority">
+                              <Flag className={`w-4 h-4 ${note.priority === 'high' ? 'text-red-500' : note.priority === 'medium' ? 'text-yellow-500' : note.priority === 'low' ? 'text-green-500' : 'text-gray-400'}`} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, priority: undefined })}>
+                              <Flag className="w-4 h-4 mr-2 text-gray-400" /> Pending
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, priority: 'high' })}>
+                              <Flag className="w-4 h-4 mr-2 text-red-500" /> High
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, priority: 'medium' })}>
+                              <Flag className="w-4 h-4 mr-2 text-yellow-500" /> Medium
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, priority: 'low' })}>
+                              <Flag className="w-4 h-4 mr-2 text-green-500" /> Low
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        {/* Completed Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="w-7 h-7 p-0" title="Mark Complete">
+                              <CheckCircle className={`w-4 h-4 ${note.completed ? 'text-green-600' : 'text-gray-400'}`} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, completed: false })}>
+                              <CheckCircle className="w-4 h-4 mr-2 text-gray-400" /> Pending
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateNote({ ...note, completed: true })}>
+                              <CheckCircle className="w-4 h-4 mr-2 text-green-600" /> Complete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        {/* Delete Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="w-7 h-7 p-0" title="Delete Note">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => deleteNote(note.id)} className="text-destructive">
+                              <Trash2 className="w-4 h-4 mr-2 text-destructive" /> Delete Note
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <div className={`text-sm whitespace-pre-wrap text-gold-800 dark:text-gold-200 leading-relaxed ${note.completed ? 'line-through opacity-70' : ''}`}>{note.content}</div>
+                    <div className="text-xs text-muted-foreground mt-1 text-right">{formatDate(note.createdAt)}</div>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8 text-right">
+                <DropdownMenu open={addNoteOpen} onOpenChange={setAddNoteOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="lg" variant="outline" className="bg-gradient-to-r from-gold-100 to-gold-200 hover:from-gold-200 hover:to-yellow-100 text-gold-800 font-semibold rounded-lg shadow border-2 border-gold-200 px-6 py-2 transition-all">
+                      {addNoteOpen ? 'Close Add Note' : 'Add Note'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[420px] p-6 rounded-2xl shadow-xl animate-fade-in bg-white dark:bg-gold-950 border-gold-200 dark:border-gold-900">
+                    <div className="mb-4 text-lg font-bold text-gold-700 dark:text-gold-200 flex items-center gap-2">
+                      <StickyNote className="w-5 h-5" />
+                      Add a New Note
+                    </div>
+                    <form className="space-y-3" onSubmit={e => {
+                      e.preventDefault();
+                      if (!newNoteContent.trim() || !newNoteTitle.trim()) return;
+                      addNoteToContext({ billId: notesDialogBill.id, title: newNoteTitle, content: newNoteContent });
+                      setNewNoteContent("");
+                      setNewNoteTitle("");
+                      setAddNoteOpen(false);
+                    }}>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border-2 border-gold-200 dark:border-gold-800 px-4 py-2 text-base focus:ring-2 focus:ring-gold-400 transition-all shadow-sm bg-gold-50 dark:bg-gold-900 placeholder:text-gold-400"
+                        placeholder="Note title (required)"
+                        value={newNoteTitle}
+                        onChange={e => setNewNoteTitle(e.target.value)}
+                        required
+                      />
+                      <textarea
+                        className="w-full rounded-lg border-2 border-gold-200 dark:border-gold-800 px-4 py-2 text-base focus:ring-2 focus:ring-gold-400 transition-all shadow-sm bg-gold-50 dark:bg-gold-900 placeholder:text-gold-400"
+                        placeholder="Write your note here... (required)"
+                        value={newNoteContent}
+                        onChange={e => setNewNoteContent(e.target.value)}
+                        rows={3}
+                        required
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button size="lg" type="submit" className="bg-gradient-to-r from-gold-400 to-gold-600 text-white px-8 py-2 rounded-lg shadow font-semibold text-base hover:from-gold-500 hover:to-yellow-400 transition-all">Save Note</Button>
+                        <Button size="lg" type="button" variant="ghost" className="font-semibold text-gold-600 hover:bg-gold-100 dark:hover:bg-gold-900" onClick={() => setAddNoteOpen(false)}>Cancel</Button>
+                      </div>
+                    </form>
+                    {(!newNoteTitle.trim() || !newNoteContent.trim()) && (
+                      <div className="mt-3 text-center text-base text-gold-500 italic animate-pulse">Start typing to add your note...</div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="mt-8 text-right">
+                <Button size="sm" variant="link" className="text-gold-700 underline font-medium text-base hover:text-gold-900" onClick={() => window.open('/notes?billId=' + notesDialogBill.id, '_blank')}>View all notes</Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -430,5 +583,59 @@ const BillsPage: React.FC = () => {
     </div>
   );
 };
+
+function BillDocumentViewer({ bill }: { bill: any }) {
+  const { getDoc } = useLocalDocStore();
+  const [blob, setBlob] = useState<Blob | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState<string | null>(null);
+  const [filename, setFilename] = useState<string | null>(null);
+  const [textContent, setTextContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchDoc() {
+      let key = bill.localDocKeys?.[0] || bill.localDocKey;
+      if (!key) return;
+      const b = await getDoc(key);
+      if (!b || !active) return;
+      setBlob(b);
+      setMimeType(b.type || 'application/octet-stream');
+      setFilename(key);
+      const u = URL.createObjectURL(b);
+      setUrl(u);
+      // If text, load content
+      if (b.type.startsWith('text/')) {
+        const txt = await b.text();
+        setTextContent(txt);
+      }
+    }
+    fetchDoc();
+    return () => {
+      active = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bill]);
+
+  if (!blob || !url) return <div className="text-center text-muted-foreground">No document found.</div>;
+
+  if (mimeType?.startsWith('image/')) {
+    return <img src={url} alt={filename || 'Bill Document'} style={{ maxWidth: '100%', maxHeight: '70vh', margin: '0 auto' }} />;
+  }
+  if (mimeType === 'application/pdf') {
+    return <iframe src={url} title="PDF Viewer" style={{ width: '100%', height: '70vh', border: 'none' }} />;
+  }
+  if (mimeType?.startsWith('text/')) {
+    return <pre className="bg-muted p-4 rounded max-h-[70vh] overflow-auto">{textContent || 'Loading...'}</pre>;
+  }
+  // Fallback: download
+  return (
+    <div className="text-center">
+      <a href={url} download={filename || 'document'} className="text-gold-700 underline font-medium">Download file</a>
+      <div className="text-xs text-muted-foreground mt-2">Cannot preview this file type.</div>
+    </div>
+  );
+}
 
 export default BillsPage;
