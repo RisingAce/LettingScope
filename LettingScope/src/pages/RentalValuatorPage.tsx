@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useCoefficients } from "../lib/coefficients";
 import { calcFairRent } from "../utils/rentUtils";
 import { calcDelusion } from "../utils/delusion";
@@ -19,13 +19,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { 
   Home, 
   Bed, 
@@ -49,6 +42,13 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   area: z.coerce.number().min(10, "Must be at least 10m²").max(500, "Must be less than 500m²"),
@@ -73,10 +73,53 @@ export default function RentalValuatorPage() {
   const epcOptions = coeff ? Object.keys(coeff.epc) : 
     Object.keys(defaultCoefficients.epc);
 
+  // Initialize form first so we can use it in hooks below
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      area: 60,
+      beds: 2,
+      location: "Leith",
+      condition: "Average",
+      epc: "C",
+      broadband: 80,
+      additive: 0,
+    },
+  });
+
   // State for location search popup
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredLocations, setFilteredLocations] = useState<string[]>(locationOptions);
+
+  // Get the current form values for calculations
+  const formValues = form.watch();  
+
+  // Function to handle location selection from dialog
+  const handleLocationSelect = useCallback((location: string) => {
+    form.setValue("location", location, { 
+      shouldValidate: true, 
+      shouldDirty: true 
+    });
+    
+    // Force update the select element in the DOM directly
+    setTimeout(() => {
+      // Get all select elements with data-placeholder="Select location"
+      const selectElements = document.querySelectorAll('.select-trigger');
+      
+      // Update the text content of each matching select element
+      selectElements.forEach(element => {
+        const span = element.querySelector('span');
+        if (span) {
+          span.textContent = location;
+        }
+      });
+    }, 100);
+    
+    // Close the dialog
+    setLocationDialogOpen(false);
+    setSearchTerm("");
+  }, [form]);
 
   // Filter locations when search term changes
   useEffect(() => {
@@ -97,20 +140,8 @@ export default function RentalValuatorPage() {
     }
   }, [locationDialogOpen]);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      area: 60,
-      beds: 2,
-      location: "Leith",
-      condition: "Average",
-      epc: "C",
-      broadband: 80,
-      additive: 0,
-    },
-  });
-
-  const [delusionParams, setDelusionParams] = useState({
+  // Delusion parameters with memoized value to prevent unnecessary recalculations
+  const [delusionParams] = useState({
     anchoring: 0.05, // Tendency to anchor to higher initial price
     btr: 0.01,       // Premium for new Build-to-Rent stock
     cap: 0.01,       // Market capitalisation/investment factor
@@ -119,8 +150,6 @@ export default function RentalValuatorPage() {
     scarcity: 0.02,  // Lack of available properties
   });
 
-  const formValues = form.watch();
-  
   const fair = coeff ? calcFairRent(coeff, {
     area: formValues.area,
     beds: formValues.beds,
@@ -207,33 +236,15 @@ export default function RentalValuatorPage() {
                         Location
                       </FormLabel>
                       <div className="flex gap-2">
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="border-gold-200 dark:border-gold-800 flex-1">
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {locationOptions.slice(0, 10).map(location => (
-                              <SelectItem key={location} value={location}>{location}</SelectItem>
-                            ))}
-                            <div className="p-2 border-t border-border mt-1">
-                              <Button 
-                                type="button"
-                                variant="ghost" 
-                                className="w-full justify-center text-gold-600 dark:text-gold-400 text-sm"
-                                onClick={() => {
-                                  setLocationDialogOpen(true);
-                                }}
-                              >
-                                Search all locations...
-                              </Button>
-                            </div>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <div 
+                            className="h-10 px-3 py-2 rounded-md border border-gold-200 dark:border-gold-800 bg-background flex items-center justify-between w-full text-sm" 
+                            onClick={() => setLocationDialogOpen(true)}
+                          >
+                            <span>{field.value}</span>
+                            <Map className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </FormControl>
                         <Button 
                           type="button"
                           variant="outline" 
@@ -259,8 +270,11 @@ export default function RentalValuatorPage() {
                         Condition
                       </FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.trigger("condition");
+                        }}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="border-gold-200 dark:border-gold-800">
@@ -288,8 +302,11 @@ export default function RentalValuatorPage() {
                         EPC Rating
                       </FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.trigger("epc");
+                        }}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="border-gold-200 dark:border-gold-800">
@@ -403,10 +420,7 @@ export default function RentalValuatorPage() {
                     key={location}
                     variant="ghost"
                     className="w-full justify-start text-left hover:bg-gold-50 dark:hover:bg-gold-900/20 h-auto py-2"
-                    onClick={() => {
-                      form.setValue("location", location);
-                      setLocationDialogOpen(false);
-                    }}
+                    onClick={() => handleLocationSelect(location)}
                   >
                     <span className="flex-1">{location}</span>
                     <span className="text-xs text-muted-foreground">
