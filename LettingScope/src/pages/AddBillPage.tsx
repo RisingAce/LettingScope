@@ -48,19 +48,20 @@ interface DocumentPreview {
 }
 
 const AddBillPage: React.FC = () => {
-  const { addBill, updateBill, getBillById, data } = useAppData();
+  const appData = useAppData();
+  const { addBill, updateBill, getBillById, data, addProperty } = appData;
   const { saveDoc, getDoc, getPreviewUrl } = useLocalDocStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { billId } = useParams();
-  
+
   const preselectedPropertyId = location.state?.propertyId;
-  
+
   const [documents, setDocuments] = useState<DocumentPreview[]>([]);
   const [bills, setBills] = useState<BillFormValues[]>([]);
   const [currentBillIndex, setCurrentBillIndex] = useState(0);
   const [isParsing, setIsParsing] = useState(false);
-  
+
   const form = useForm<BillFormValues>({
     resolver: zodResolver(utilitiesSchema),
     defaultValues: {
@@ -139,11 +140,11 @@ const AddBillPage: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    
+
     for (const file of Array.from(files)) {
       await handleAttachment(file);
     }
-    
+
     event.target.value = '';
   };
 
@@ -151,26 +152,41 @@ const AddBillPage: React.FC = () => {
     if (data.amount && !form.getValues().amount) {
       form.setValue('amount', data.amount);
     }
-    
+
     if (data.provider && !form.getValues().provider) {
       form.setValue('provider', data.provider);
     }
-    
+
     if (data.accountNumber && !form.getValues().accountNumber) {
       form.setValue('accountNumber', data.accountNumber);
     }
-    
+
     if (data.utilityType && form.getValues().utilityType.includes('electricity')) {
       const validUtilityType = data.utilityType as "electricity" | "gas" | "water" | "internet" | "councilTax" | "tv" | "other";
       form.setValue('utilityType', [...form.getValues().utilityType, validUtilityType]);
     }
-    
+
     if (data.issueDate) {
       form.setValue('issueDate', data.issueDate);
     }
-    
+
     if (data.dueDate) {
       form.setValue('dueDate', data.dueDate);
+    }
+
+    if (data.propertySuggestion) {
+      const { address, name } = data.propertySuggestion;
+      // Check existing property
+      const existing = appData.data.properties.find(p => p.address.trim().toLowerCase() === address.trim().toLowerCase());
+      if (existing) {
+        form.setValue('propertyId', existing.id);
+      } else {
+        if (window.confirm(`Add new property at ${address}?`)) {
+          const newProp = addProperty({ name, address });
+          toast({ title: 'Property added!', description: `Added property at ${address}` });
+          form.setValue('propertyId', newProp.id);
+        }
+      }
     }
   };
 
@@ -421,8 +437,8 @@ const AddBillPage: React.FC = () => {
                   <FormItem>
                     <FormLabel>Property*</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
+                      onValueChange={field.onChange}
                       disabled={!!preselectedPropertyId}
                     >
                       <FormControl>
@@ -431,7 +447,7 @@ const AddBillPage: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {data.properties.map((property) => (
+                        {appData.data.properties.map((property) => (
                           <SelectItem key={property.id} value={property.id}>
                             <div className="flex items-center gap-2">
                               <Building className="h-4 w-4" />

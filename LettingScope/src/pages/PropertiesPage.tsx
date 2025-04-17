@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -244,51 +243,14 @@ const PropertiesPage: React.FC = () => {
             const isOccupied = !!property.tenantName;
             
             return (
-              <Card key={property.id} className="overflow-hidden border-gold-200 dark:border-gold-800 hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex justify-between items-start">
-                    <span className="truncate flex items-center">
-                      {property.featured && (
-                        <Bookmark className="h-4 w-4 mr-1 text-gold-500" />
-                      )}
-                      {property.name}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="-mr-2 hover:bg-gold-100 dark:hover:bg-gold-900/40">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="border-gold-200 dark:border-gold-800">
-                        <DropdownMenuItem asChild>
-                          <Link to={`/properties/${property.id}`} className="flex items-center">
-                            <Home className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to={`/properties/${property.id}/edit`} className="flex items-center">
-                            <ArrowUpCircle className="mr-2 h-4 w-4" />
-                            Manage Property
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive hover:bg-destructive/10"
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setShowConfirmDelete(property.id);
-                          }}
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          Delete Property
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              <Card key={property.id} className="overflow-hidden border-gold-200 dark:border-gold-800 hover:shadow-md transition-shadow flex flex-col min-h-80">
+                <CardHeader className="pb-8 space-y-2">
+                  <CardTitle className="flex flex-col items-start">
+                    <span className="font-artdeco text-xl font-bold whitespace-normal break-words leading-tight">{property.name}</span>
                   </CardTitle>
-                  <CardDescription className="flex items-center gap-1 truncate">
+                  <CardDescription className="flex items-start gap-1 mt-2">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="truncate">{property.address}</span>
+                    <span className="flex-1 whitespace-normal break-words leading-snug">{property.address}</span>
                   </CardDescription>
                   {property.propertyType && (
                     <div className="mt-2 flex gap-2">
@@ -303,7 +265,7 @@ const PropertiesPage: React.FC = () => {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent className="pb-3">
+                <CardContent className="pb-3 flex-1">
                   <div className="space-y-2 text-sm">
                     {property.landlordName && (
                       <div className="flex items-center gap-2">
@@ -345,7 +307,7 @@ const PropertiesPage: React.FC = () => {
                     )}
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-between border-t pt-3 text-xs text-muted-foreground border-gold-200 dark:border-gold-800">
+                <CardFooter className="flex justify-between items-end border-t pt-3 text-xs text-muted-foreground border-gold-200 dark:border-gold-800">
                   <div>
                     {pendingBills.length > 0 ? (
                       <span className="text-destructive font-medium">
@@ -355,7 +317,12 @@ const PropertiesPage: React.FC = () => {
                       <span>No pending bills</span>
                     )}
                   </div>
-                  <div>Updated {formatDate(property.updatedAt)}</div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span>Updated {formatDate(property.updatedAt)}</span>
+                    <Button asChild variant="outline" size="sm" className="border-gold-200 dark:border-gold-800 hover:bg-gold-100 dark:hover:bg-gold-900/40 mt-1">
+                      <Link to={`/properties/${property.id}`}>View Details</Link>
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
             );

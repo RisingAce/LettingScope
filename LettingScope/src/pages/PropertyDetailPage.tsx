@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/contexts/AppContext";
 import { useLocalDocStore, LocalDocMeta } from "@/hooks/useLocalDocStore";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Custom hook for loading local bill thumbnails
 function useBillThumbnail(localDocKey?: string) {
@@ -30,6 +31,25 @@ function useBillThumbnail(localDocKey?: string) {
   return thumbUrl;
 }
 
+function BillThumbnail({ localDocKey, bill, onClick }: { localDocKey?: string; bill: any; onClick: (bill: any) => void; }) {
+  const thumbUrl = useBillThumbnail(localDocKey);
+  return (
+    <div className="flex items-center justify-center h-16 w-16 bg-gold-50 rounded border border-gold-200 cursor-pointer group" onClick={() => onClick(bill)}>
+      {thumbUrl ? (
+        <img
+          src={thumbUrl}
+          alt="Bill thumbnail"
+          className="h-16 w-16 object-cover rounded border border-gold-200 shadow-md transition-transform hover:scale-105 hover:shadow-lg"
+          style={{ background: '#fff' }}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
+        />
+      ) : (
+        <FileText className="w-8 h-8 text-gold-400" />
+      )}
+    </div>
+  );
+}
+
 const PropertyDetailPage: React.FC = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
   const navigate = useNavigate();
@@ -47,11 +67,26 @@ const PropertyDetailPage: React.FC = () => {
   const handleViewDocument = async (bill: any) => {
     setSelectedBill(bill);
     setIsPreviewOpen(true);
-    let url = bill.documentUrl;
-    if (bill.localDocKey) {
-      const { getDoc, getPreviewUrl } = useLocalDocStore();
-      const blob = await getDoc(bill.localDocKey);
-      if (blob) url = getPreviewUrl(blob);
+    const { getDoc, getPreviewUrl } = useLocalDocStore();
+    const key = bill.localDocKeys?.[0] || bill.localDocKey;
+    let url = '';
+    if (key) {
+      const blob = await getDoc(key);
+      if (blob) {
+        url = getPreviewUrl(blob);
+      }
+    }
+    if (!url && bill.documentUrl) {
+      try {
+        if (bill.documentUrl.startsWith('[')) {
+          const docs = JSON.parse(bill.documentUrl);
+          if (Array.isArray(docs) && docs[0]?.url) url = docs[0].url;
+        } else {
+          url = bill.documentUrl;
+        }
+      } catch {
+        url = bill.documentUrl;
+      }
     }
     setPreviewUrl(url);
   };
@@ -277,85 +312,68 @@ const PropertyDetailPage: React.FC = () => {
               Add Bill
             </Button>
           </div>
-          
-          {bills.length === 0 ? (
-            <Card className="border-gold-200 dark:border-gold-800 bg-gold-50 dark:bg-gold-900/20">
-              <CardContent className="pt-6 pb-4 px-6 text-center">
-                <ReceiptText className="h-12 w-12 mx-auto mb-4 text-gold-500 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No bills added yet</h3>
-                <p className="text-muted-foreground">Start tracking utility bills for this property.</p>
-                <Button 
-                  onClick={() => navigate('/bills/new', { state: { propertyId: property.id } })}
-                  variant="outline"
-                  className="mt-4 border-gold-200 dark:border-gold-800 hover:bg-gold-100 dark:hover:bg-gold-900/40"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" /> 
-                  Add Your First Bill
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {bills.map(bill => {
-                const thumbUrl = useBillThumbnail(bill.localDocKey);
-                return (
-                  <Card key={bill.id} className="border-gold-200 dark:border-gold-800 hover:bg-gold-50 dark:hover:bg-gold-900/10 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1 p-2 rounded-md bg-gold-100 dark:bg-gold-900/30">
-                            <FileText className="h-5 w-5 text-gold-500" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{bill.provider}</h3>
-                            <p className="text-sm text-muted-foreground capitalize">{formatUtilityType(bill.utilityType)}</p>
-                            <div className="mt-2 flex flex-wrap gap-2 items-center">
-                              <Badge variant={bill.status === "paid" ? "outline" : bill.status === "overdue" ? "destructive" : "secondary"} className="text-xs">
-                                {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                              </Badge>
-                              <span className="text-sm flex items-center gap-1">
-                                <span className="font-medium">£</span>
-                                {bill.amount !== undefined && bill.amount !== null && !isNaN(bill.amount) ? Number(bill.amount).toFixed(2) : '—'}
-                              </span>
-                              <span className="text-sm flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                Due: {formatDate(bill.dueDate)}
-                              </span>
-                            </div>
-                          </div>
+          <div className="rounded-md border border-gold-200 dark:border-gold-800">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">Bill / Property</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Thumbnail</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bills.map((bill) => (
+                  <TableRow key={bill.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{bill.provider}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Building className="h-3 w-3" />
+                          {property.name}
                         </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-muted-foreground hover:text-foreground"
-                            onClick={() => navigate(`/bills/${bill.id}/edit`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {thumbUrl && (
-                            <img src={thumbUrl} alt="Bill thumbnail" className="h-10 w-10 object-cover rounded" />
-                          )}
-                          {bill.documentUrl && (
-                            <Button size="sm" variant="outline" onClick={() => handleViewDocument(bill)}>
-                              View
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            className="bg-gold-400 hover:bg-gold-500 text-white font-bold"
-                            onClick={() => navigate(`/bills?highlight=${bill.id}`)}
-                          >
-                            View on Bills Page
-                          </Button>
-                        </div>
+                        <div className="text-xs text-muted-foreground capitalize">{formatUtilityType(bill.utilityType)}</div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                    </TableCell>
+                    <TableCell>£{typeof bill.amount === 'number' ? bill.amount.toFixed(2) : '-'}</TableCell>
+                    <TableCell>{formatDate(bill.dueDate)}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        bill.status === "paid"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : bill.status === "pending"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                            : bill.status === "overdue"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300"
+                      }`}>{bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <BillThumbnail localDocKey={bill.localDocKeys?.[0] || bill.localDocKey} bill={bill} onClick={handleViewDocument} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={() => navigate(`/bills/${bill.id}/edit`)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {(bill.localDocKey || bill.documentUrl) && (
+                          <Button size="sm" variant="outline" onClick={() => handleViewDocument(bill)}>View</Button>
+                        )}
+                        <Button size="sm" variant="outline" asChild className="h-8 border-gold-200 dark:border-gold-800">
+                          <Link to={`/properties/${property.id}`}>View Property</Link>
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 border-gold-200 dark:border-gold-800 flex items-center gap-1" onClick={() => setSelectedBill(bill)}>
+                          <StickyNote className="w-4 h-4 mr-1" />Notes
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
         
         <TabsContent value="chasers" className="mt-6">

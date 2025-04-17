@@ -1,9 +1,8 @@
-
 import React from "react";
 import { useAppData } from "@/contexts/AppContext";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Calendar, AlertTriangle, ArrowRight, CreditCard } from "lucide-react";
+import { Building, Calendar, AlertTriangle, ArrowRight, CreditCard, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -26,7 +25,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-3xl font-artdeco">Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-artdeco">Dashboard</h1>
+          <Button asChild className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white rounded-lg shadow-lg hover:shadow-pink-500/50 transition-all animate-pulse">
+            <Link to="/bill-parser-xtreme">BillParserXtreme</Link>
+          </Button>
+        </div>
         <div className="flex gap-3">
           <Button asChild variant="outline" className="border-gold-200 dark:border-gold-800">
             <Link to="/properties/new">
@@ -38,6 +42,12 @@ const Dashboard: React.FC = () => {
             <Link to="/chasers/new">
               <Calendar className="mr-2 h-4 w-4" />
               Add Reminder
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="border-gold-200 dark:border-gold-800">
+            <Link to="/quick-add">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Quick Add
             </Link>
           </Button>
         </div>

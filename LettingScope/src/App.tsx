@@ -17,6 +17,8 @@ import AddBillPage from "@/pages/AddBillPage";
 import BillsPage from "@/pages/BillsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
+import QuickAddPage from "@/pages/QuickAddPage";
+import BillParserXtremePage from "@/pages/BillParserXtremePage";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +78,16 @@ const App = () => (
             <Route path="/chasers/new" element={
               <Layout>
                 <AddChaserPage />
+              </Layout>
+            } />
+            <Route path="/quick-add" element={
+              <Layout>
+                <QuickAddPage />
+              </Layout>
+            } />
+            <Route path="/bill-parser-xtreme" element={
+              <Layout>
+                <BillParserXtremePage />
               </Layout>
             } />
             <Route path="/notes" element={

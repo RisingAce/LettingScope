@@ -80,100 +80,151 @@ export const generatePDFThumbnail = async (file: File): Promise<string> => {
 }
 
 /**
- * Try to extract bill data from PDF text content
+ * Try to extract bill data from PDF text content (enhanced with block parsing & debug)
  */
 export const parseBillData = (textContent: string): ExtractedBillData => {
+  const lines = textContent.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  console.debug('[PARSE] total lines:', lines.length);
+
   const data: ExtractedBillData = {};
-  
-  // Extract amount (look for currency symbols and numbers)
-  const amountRegex = /(?:£|\$|USD|GBP|EUR|€|\bpounds\b|\btotal\b|\bamount\b|\bdue\b)[\s:]*([0-9,.]+)/i;
-  const amountMatch = textContent.match(amountRegex);
-  if (amountMatch && amountMatch[1]) {
-    const extractedAmount = parseFloat(amountMatch[1].replace(/,/g, ''));
-    if (!isNaN(extractedAmount)) {
-      data.amount = extractedAmount;
+
+  // Patterns to ignore specific office addresses
+  const ignorePatterns = [/^4\s*jamaica\s+st(?:reet)?\.?$/i];
+
+  // Identify address block before first label keyword
+  const labelKeywords = ['bill date', 'your customer number', 'customer number', 'account number', 'invoice', 'amount due', 'supply address', 'payment overdue', 'outstanding debt'];
+  let addressEndIndex = lines.findIndex(line =>
+    labelKeywords.some(k => line.toLowerCase().includes(k))
+  );
+  if (addressEndIndex === -1) addressEndIndex = Math.min(5, lines.length);
+  const addressLines = lines.slice(0, addressEndIndex);
+  console.debug('[PARSE] address block:', addressLines);
+
+  // Extract Supply Address via regex
+  const supplyRe = /Supply\s+Address\s*:?\s*(.+?)(?=\s*(?:makeapayment|Free automated|Ways to pay|$))/i;
+  const supplyMatch = supplyRe.exec(textContent);
+  if (supplyMatch) {
+    data.propertyAddress = supplyMatch[1].trim().replace(/\s+/g, ' ');
+    console.debug('[PARSE] supplyAddress:', data.propertyAddress);
+  }
+
+  // Header fallback
+  if (!data.propertyAddress && addressLines.length > 1) {
+    data.accountHolder = addressLines[0];
+    const rawHeader = addressLines.slice(1).join(' ');
+    const hdPattern = /(\d{1,4}\s+[A-Za-z0-9\/\-]+(?:\s+[A-Za-z0-9\/\-]+)*\s+(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Close|Court|Grove))/i;
+    const hdMatch = rawHeader.match(hdPattern);
+    if (hdMatch) {
+      data.propertyAddress = hdMatch[1].trim();
+      console.debug('[PARSE] header-derived propertyAddress:', data.propertyAddress);
     }
   }
-  
-  // Extract account number (look for keywords like account, customer, reference number)
-  const accountNumberRegex = /(?:\baccount\s*(?:number|#|no)\b|\bcustomer\s*(?:id|number|#|no)\b|\breference\s*(?:number|#|no)\b)(?:\s*:\s*|\s+)([A-Za-z0-9-]+)/i;
-  const accountMatch = textContent.match(accountNumberRegex);
-  if (accountMatch && accountMatch[1]) {
-    data.accountNumber = accountMatch[1].trim();
+
+  // Helper for date parsing
+  function safeParseDate(str: string): Date | undefined {
+    const cleaned = str.replace(/(\d+)(st|nd|rd|th)/gi, '$1');
+    const parsed = new Date(cleaned);
+    if (!isNaN(parsed.getTime())) return parsed;
+    return undefined;
   }
-  
-  // Extract utility type (check for common utilities)
-  const utilityTypes = [
-    { type: "electricity" as const, keywords: ['electric', 'electricity', 'power', 'energy'] },
-    { type: "gas" as const, keywords: ['gas', 'natural gas'] },
-    { type: "gasAndElectricity" as const, keywords: ['gas and electric', 'gas & electric', 'dual fuel', 'gas & electricity', 'gas and electricity'] },
-    { type: "water" as const, keywords: ['water', 'water supply'] },
-    { type: "internet" as const, keywords: ['internet', 'broadband', 'wifi', 'fibre'] },
-    { type: "councilTax" as const, keywords: ['council tax', 'council'] },
-    { type: "tv" as const, keywords: ['tv license', 'television license', 'tv licence'] },
-    { type: "other" as const, keywords: ['other'] }
+
+  // Improved account number regex: match more variants, skip non-digits before capturing number
+  const accountNoPattern = /(?:your\s*customer\s*number|customer\s*number|account\s*number|account\s*no\.?|account\s*#|reference)\b[^\d]*(\d[\d\s]+)/i;
+  for (const line of lines) {
+    console.debug('[PARSE] checking for account number in line:', line);
+    const m = line.match(accountNoPattern);
+    if (m && m[1]) {
+      // Post-process: keep only number parts longer than one digit to drop rogue '4'
+      const raw = m[1];
+      const parts = raw.trim().split(/\s+/).filter(p => p.length > 1);
+      data.accountNumber = parts.join(' ');
+      console.debug('[PARSE] accountNumber parts:', parts);
+      console.debug('[PARSE] accountNumber:', data.accountNumber);
+      break;
+    }
+  }
+
+  // Helper for currency extraction
+  function extractAmount(line: string): number | undefined {
+    const match = line.match(/([£\$€])\s*([0-9.,]+)/);
+    if (match) {
+      return parseFloat(match[2].replace(/,/g, ''));
+    }
+    return undefined;
+  }
+
+  // Define patterns for other fields
+  const patterns = [
+    { field: 'issueDate', regex: /(?:bill\s*date|issue\s*date|statement\s*date|date):?\s*([\d\w\s\/\-\,]+)/i, processor: (m: RegExpMatchArray) => safeParseDate(m[1]) },
+    { field: 'dueDate', regex: /(?:due\s*date|payment\s*due|pay\s*by|payment\s*by):?\s*([\d\w\s\/\-\,]+)/i, processor: (m: RegExpMatchArray) => safeParseDate(m[1]) },
+    { field: 'amount', regex: /(?:outstanding\s*debt|total\s*(?:amount)?\s*due|amount\s*due|bill\s*amount|total|payment of)[:]?(.*)/i, processor: (m: RegExpMatchArray) => extractAmount(m[1]) },
+    { field: 'utilityType', regex: /(gas\s*&?\s*electricity|electricity|gas|water|broadband|internet|council\s*tax|tv\s*license)/i, processor: (m: RegExpMatchArray) => {
+        const v = m[1].toLowerCase();
+        if (v.includes('gas') && v.includes('electric')) return 'gasAndElectricity';
+        if (v.includes('electric')) return 'electricity';
+        if (v.includes('gas')) return 'gas';
+        if (v.includes('water')) return 'water';
+        if (v.includes('broadband') || v.includes('internet')) return 'internet';
+        if (v.includes('council')) return 'councilTax';
+        if (v.includes('tv')) return 'tv';
+        return 'other';
+      }},
+  ] as Array<{ field: keyof ExtractedBillData; regex: RegExp; processor?: (m: RegExpMatchArray) => any }>;
+
+  for (const line of lines) {
+    console.debug('[PARSE] line:', line);
+    for (const { field, regex, processor } of patterns) {
+      if (data[field] !== undefined) continue;
+      const match = line.match(regex);
+      if (match) {
+        console.debug(`[PARSE] matched ${field}:`, match[1]);
+        (data as any)[field] = processor ? processor(match) : match[1].trim();
+      }
+    }
+  }
+
+  // Provider detection via known names
+  console.debug('[PARSE] starting provider mapping detection');
+  const providerDefs = [
+    { pattern: /british\s*gas/i, name: 'British Gas' },
+    { pattern: /scottishpower/i, name: 'ScottishPower' },
+    { pattern: /edf\b/i, name: 'EDF' },
+    { pattern: /octopus/i, name: 'Octopus Energy' },
+    { pattern: /e\.?\s?on/i, name: 'E.ON' },
+    { pattern: /bulb/i, name: 'Bulb' },
+    { pattern: /ovo/i, name: 'OVO' },
+    { pattern: /shell\s*energy/i, name: 'Shell Energy' },
+    { pattern: /sse/i, name: 'SSE' },
   ];
-  
-  // Check for combined gas and electricity (dual fuel)
-  const hasGas = utilityTypes[1].keywords.some(keyword => 
-    textContent.toLowerCase().includes(keyword.toLowerCase())
-  );
-  
-  const hasElectricity = utilityTypes[0].keywords.some(keyword => 
-    textContent.toLowerCase().includes(keyword.toLowerCase())
-  );
-  
-  if (hasGas && hasElectricity) {
-    data.utilityType = "gasAndElectricity";
-  } else {
-    // Check for other utility types
-    for (const utility of utilityTypes) {
-      const found = utility.keywords.some(keyword => 
-        textContent.toLowerCase().includes(keyword.toLowerCase())
-      );
-      if (found) {
-        data.utilityType = utility.type;
+  if (!data.provider) {
+    for (const { pattern, name } of providerDefs) {
+      // Match known provider names regardless of digits in line
+      const matchLine = lines.find(l => pattern.test(l));
+      if (matchLine) {
+        data.provider = name;
+        console.debug(`[PARSE] provider detected via mapping: ${name}`);
         break;
       }
     }
   }
-  
-  // Extract provider name (look for common bill provider prefixes/suffixes)
-  const providerRegexes = [
-    /([A-Za-z0-9\s&]+)\s*(?:Ltd|Limited|Inc|LLC|PLC|Corporation|Corp)/i,
-    /(?:From|Bill from|Supplier|Provider|Billed by):\s*([A-Za-z0-9\s&]+)/i
-  ];
-  
-  for (const regex of providerRegexes) {
-    const match = textContent.match(regex);
-    if (match && match[1]) {
-      data.provider = match[1].trim();
-      break;
+  if (!data.provider) console.debug('[PARSE] no provider mapping found');
+
+  if (data.propertyAddress) {
+    // Use trimmed accountHolder if available, else fallback to address
+    const name = data.accountHolder?.trim() || data.propertyAddress;
+    data.propertySuggestion = { address: data.propertyAddress, name };
+  }
+
+  // Exclude variants of office address from propertySuggestion
+  if (data.propertySuggestion) {
+    const addr = data.propertySuggestion.address.trim();
+    if (ignorePatterns.some(p => p.test(addr))) {
+      console.debug(`[PARSE] ignoring office address suggestion: ${addr}`);
+      delete data.propertySuggestion;
     }
   }
-  
-  // Extract dates (look for due date, issue date, etc.)
-  const dateRegexes = [
-    { type: 'dueDate', regex: /(?:due\s*date|payment\s*due|pay\s*by|payment\s*by):\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})/i },
-    { type: 'issueDate', regex: /(?:issue\s*date|bill\s*date|date\s*of\s*bill|statement\s*date):\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})/i }
-  ];
-  
-  for (const { type, regex } of dateRegexes) {
-    const match = textContent.match(regex);
-    if (match && match[1]) {
-      try {
-        const dateString = match[1].trim();
-        const parsedDate = new Date(dateString);
-        if (!isNaN(parsedDate.getTime())) {
-          if (type === 'dueDate') data.dueDate = parsedDate;
-          else if (type === 'issueDate') data.issueDate = parsedDate;
-        }
-      } catch (error) {
-        console.error(`Error parsing ${type}:`, error);
-      }
-    }
-  }
-  
+
+  console.debug('[PARSE] final extracted data:', data);
   return data;
 }
 
@@ -184,4 +235,7 @@ export interface ExtractedBillData {
   dueDate?: Date;
   accountNumber?: string;
   utilityType?: "electricity" | "gas" | "water" | "internet" | "councilTax" | "tv" | "gasAndElectricity" | "other";
+  accountHolder?: string;
+  propertyAddress?: string;
+  propertySuggestion?: { address: string; name?: string };
 }
