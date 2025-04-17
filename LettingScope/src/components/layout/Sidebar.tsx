@@ -7,7 +7,7 @@ import { useAppData } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, Building, CalendarClock, Settings, FileText, 
-  ChevronLeft, ChevronRight, Menu, CreditCard
+  ChevronLeft, ChevronRight, Menu, CreditCard, DollarSign
 } from "lucide-react";
 import unicornLogo from "@/assets/unicorn-logo.png";
 
@@ -52,6 +52,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       title: "Notes",
       href: "/notes",
       icon: FileText,
+      badge: null,
+    },
+    {
+      title: "Rental Valuator",
+      href: "/rental-valuator",
+      icon: DollarSign,
       badge: null,
     },
     {

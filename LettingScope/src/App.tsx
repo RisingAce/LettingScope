@@ -19,6 +19,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
 import QuickAddPage from "@/pages/QuickAddPage";
 import BillParserXtremePage from "@/pages/BillParserXtremePage";
+import RentalValuatorPage from "@/pages/RentalValuatorPage";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,11 @@ const App = () => (
             <Route path="/settings" element={
               <Layout>
                 <SettingsPage />
+              </Layout>
+            } />
+            <Route path="/rental-valuator" element={
+              <Layout>
+                <RentalValuatorPage />
               </Layout>
             } />
             <Route path="*" element={<NotFound />} />
