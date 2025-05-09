@@ -1,0 +1,27 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <circle cx="100" cy="100" r="95" stroke="#EAB308" stroke-width="2"></circle>
+  <circle cx="100" cy="100" r="75" stroke="#EAB308" stroke-width="1.5"></circle>
+  <circle cx="100" cy="100" r="50" stroke="#EAB308" stroke-width="1.5"></circle>
+  <circle cx="100" cy="100" r="25" stroke="#EAB308" stroke-width="1.5"></circle>
+  
+  <!-- Radiating lines -->
+  <g stroke="#EAB308" stroke-width="1">
+    <line x1="100" y1="5" x2="100" y2="25"></line>
+    <line x1="100" y1="175" x2="100" y2="195"></line>
+    <line x1="5" y1="100" x2="25" y2="100"></line>
+    <line x1="175" y1="100" x2="195" y2="100"></line>
+    
+    <line x1="35" y1="35" x2="50" y2="50"></line>
+    <line x1="150" y1="150" x2="165" y2="165"></line>
+    <line x1="35" y1="165" x2="50" y2="150"></line>
+    <line x1="150" y1="50" x2="165" y2="35"></line>
+  </g>
+
+  <!-- Geometric flourishes -->
+  <g stroke="#EAB308" stroke-width="1">
+    <path d="M100 25 L105 35 L95 35 Z"></path>
+    <path d="M100 175 L105 165 L95 165 Z"></path>
+    <path d="M25 100 L35 105 L35 95 Z"></path>
+    <path d="M175 100 L165 105 L165 95 Z"></path>
+  </g>
+</svg>

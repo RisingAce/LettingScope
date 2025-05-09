@@ -1,0 +1,22 @@
+[
+{"id":"2d545f41","area":61,"beds":1,"location":"Old Town","condition":"Average","epc":"F","broadband":150,"agreedRent":1355},
+{"id":"2957b2b6","area":84,"beds":1,"location":"Marchmont","condition":"Average","epc":"G","broadband":150,"agreedRent":1546},
+{"id":"5a7b4b8b","area":74,"beds":2,"location":"Bruntsfield","condition":"Above-Avg","epc":"B","broadband":300,"agreedRent":1952},
+{"id":"b2d2d2b0","area":102,"beds":2,"location":"Corstorphine","condition":"High","epc":"B","broadband":300,"agreedRent":2459},
+{"id":"baf5f204","area":54,"beds":1,"location":"Gorgie","condition":"Above-Avg","epc":"B","broadband":80,"agreedRent":1088},
+{"id":"e0a2a4b7","area":101,"beds":3,"location":"Bruntsfield","condition":"Poor","epc":"D","broadband":80,"agreedRent":1682},
+{"id":"e7f6b4e7","area":66,"beds":2,"location":"Leith","condition":"Average","epc":"F","broadband":100,"agreedRent":1310},
+{"id":"f9b2c2b0","area":67,"beds":1,"location":"New Town","condition":"Average","epc":"A","broadband":100,"agreedRent":1196},
+{"id":"b3f4e4c2","area":56,"beds":1,"location":"Portobello","condition":"Below-Avg","epc":"F","broadband":100,"agreedRent":910},
+{"id":"a7a9d2c7","area":51,"beds":1,"location":"Stockbridge","condition":"High","epc":"F","broadband":100,"agreedRent":1174},
+{"id":"f2e3b1a1","area":60,"beds":2,"location":"New Town","condition":"Above-Avg","epc":"F","broadband":150,"agreedRent":1439},
+{"id":"a7f8c8e9","area":81,"beds":2,"location":"Leith","condition":"Above-Avg","epc":"E","broadband":80,"agreedRent":1448},
+{"id":"d3b5f8a2","area":51,"beds":1,"location":"Stockbridge","condition":"Average","epc":"C","broadband":100,"agreedRent":1027},
+{"id":"b8c1e7f2","area":60,"beds":1,"location":"Marchmont","condition":"Above-Avg","epc":"A","broadband":80,"agreedRent":1219},
+{"id":"e4a7d3b6","area":90,"beds":2,"location":"Liberton","condition":"High","epc":"A","broadband":150,"agreedRent":1828},
+{"id":"c9a2f1d3","area":62,"beds":1,"location":"Portobello","condition":"Average","epc":"C","broadband":100,"agreedRent":1014},
+{"id":"e6d8b2a5","area":51,"beds":1,"location":"Gorgie","condition":"Above-Avg","epc":"B","broadband":80,"agreedRent":1017},
+{"id":"a6e3c7d5","area":53,"beds":1,"location":"Leith","condition":"Poor","epc":"C","broadband":100,"agreedRent":820},
+{"id":"c2f7e9b5","area":109,"beds":3,"location":"New Town","condition":"Above-Avg","epc":"E","broadband":150,"agreedRent":1997},
+{"id":"b8e3c9a4","area":60,"beds":2,"location":"Liberton","condition":"Average","epc":"E","broadband":100,"agreedRent":1155}
+]
